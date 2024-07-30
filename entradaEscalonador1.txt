@@ -1,0 +1,11 @@
+prioridade|10
+processo|0|0|29|44
+processo|1|1|73|80
+processo|2|2|24|71
+processo|3|3|56|40
+processo|4|4|70|2
+processo|5|5|42|41
+processo|6|6|6|26
+processo|7|7|96|5
+processo|8|8|43|55
+processo|9|9|80|56
