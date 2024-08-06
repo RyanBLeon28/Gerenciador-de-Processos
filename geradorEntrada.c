@@ -1,4 +1,4 @@
-#include<stdio.h>
+#include <stdio.h>
 #include <stdlib.h> 
 #include <time.h> 
 
@@ -32,7 +32,8 @@ int main() {
             return 1;
     }
 
-    const char *dirFile= "/home/ryan/Desktop/Ecomp/S Operacionais/Gerenciador de Processos/entradaEscalonador1.txt"; // caminho relativo
+
+    const char *dirFile= "./entradaEscalonador1.txt"; // caminho relativo
 
     FILE *out = fopen(dirFile, "w");
     if (out == NULL) {
@@ -58,7 +59,7 @@ int main() {
         priority = (rand() % (max - min + 1)) + min; 
         sprintf(priorityString, "%d", priority);
 
-        fprintf(out, "processo|%s|%s|%s|%s\n", intString, intString, timeString, priorityString); // Escreve no documento Ex.: processo-0|0|5|41
+        fprintf(out, "processo-%s|%s|%s|%s\n", intString, intString, timeString, priorityString); // Escreve no documento Ex.: processo-0|0|5|41
     }
 
         processITP[0] = '\0';
