@@ -42,7 +42,7 @@ int main() {
     }
 
     // Escreve o algoritmo escolhido e numero de processos
-    fprintf(out, "%s|%s\n", algChosen, nOfProcess); // Escreve no documento Ex.: alternanciaCircular|5
+    fprintf(out, "%s|%d\n", algChosen, clock); // Escreve no documento Ex.: alternanciaCircular|5
 
     int time, priority;
     char intString[12], 

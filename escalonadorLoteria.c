@@ -11,12 +11,26 @@ typedef struct st_processo
     int bilhetes;
 }processo;
 
+int contar_processos(void){
+    FILE *fp = fopen("entradaEscalonador.txt", "r");
+    int count = 0;
+    char ch;
+
+    while ((ch = getc(fp)) != EOF)
+    {
+        if(ch == '\n'){
+            count++;
+        }
+    }
+    fclose(fp);
+    return count-1;
+}
 
 int main()
 {
-    FILE *fp = fopen("entradaEscalonador1.txt", "r");
+    FILE *fp = fopen("entradaEscalonador.txt", "r");
     char ch, *processos, *palavra;
-    int int_processos, numero, count=0, num_bilhetes = 0;
+    int num_processos=0,count=0, num_bilhetes = 0, clock_cpu;
 
     char linha[100];
 
@@ -24,28 +38,35 @@ int main()
     while (fgets(linha, sizeof(linha), fp)) {
         palavra = strtok(linha, "|");
         printf("O algoritmo é: %s\n", palavra);
-        processos = strtok(NULL, "|");
+        clock_cpu = atoi(strtok(NULL, "|"));
         break;
     }
 
-    int_processos = atoi(processos);
-    printf("O número de processos é: %d\n", int_processos);
+    printf("A fração da CPU será: %d\n", clock_cpu);
 
-    processo lista_processos[int_processos];
+    num_processos = contar_processos(); //Conta quantos processos existem
+
+    processo lista_processos[num_processos]; //Cria uma lista com as informações dos processos
 
     while (fgets(linha, sizeof(linha), fp)){
         strcpy(lista_processos[count].name,strtok(linha, "|"));
         lista_processos[count].id = atoi(strtok(NULL, "|"));
         lista_processos[count].clock = atoi(strtok(NULL, "|"));
         lista_processos[count].bilhetes = atoi(strtok(NULL, "|"));
+        printf("Processo: %s \n", lista_processos[count].name);
+        printf("Id: %d \n", lista_processos[count].id);
+        printf("Clock: %d \n", lista_processos[count].clock);
+        printf("Bilhetes: %d \n\n", lista_processos[count].bilhetes);
         count++;
+
     };
 
-    for (int i = 0; i < int_processos; i++)
+    for (int i = 0; i < num_processos; i++)
     {
         num_bilhetes += lista_processos[i].bilhetes;
     }
-    printf(" O número total de bilhetes do sorteio será: %d \n", num_bilhetes);
+
+    printf("O número total de bilhetes do sorteio será: %d \n", num_bilhetes);
     
 
     fclose(fp);
