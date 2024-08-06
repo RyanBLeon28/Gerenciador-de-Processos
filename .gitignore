@@ -1,5 +1,5 @@
 #Ignorar arquivos txt
-.txt
+*.txt
 
 #Ignorar o arquivo out
-.out
+*.out
