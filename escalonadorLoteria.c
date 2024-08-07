@@ -2,6 +2,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 
 typedef struct st_processo
 {
@@ -26,18 +27,24 @@ int contar_processos(void){
     return count-1;
 }
 
+int sorteio(int num_bilhetes){
+    int sorteado = rand() % (num_bilhetes + 1);
+    printf("%d \n", sorteado);
+    return sorteado;
+}
+
 int main()
 {
+    srand(time(NULL));
     FILE *fp = fopen("entradaEscalonador.txt", "r");
-    char ch, *processos, *palavra;
+    char ch, *processos, *alg;
     int num_processos=0,count=0, num_bilhetes = 0, clock_cpu;
 
     char linha[100];
 
-    // Leia cada linha do arquivo e imprima na tela
-    while (fgets(linha, sizeof(linha), fp)) {
-        palavra = strtok(linha, "|");
-        printf("O algoritmo é: %s\n", palavra);
+    while (fgets(linha, sizeof(linha), fp)) { //Mostra qual o algoritmo e o clock
+        alg = strtok(linha, "|");
+        printf("O algoritmo é: %s\n", alg);
         clock_cpu = atoi(strtok(NULL, "|"));
         break;
     }
@@ -68,6 +75,9 @@ int main()
 
     printf("O número total de bilhetes do sorteio será: %d \n", num_bilhetes);
     
+    for(int i = 0; i < 10; i++){
+        sorteio(num_bilhetes);
+    };
 
     fclose(fp);
     return 0;
