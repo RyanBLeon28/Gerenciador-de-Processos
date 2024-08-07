@@ -29,16 +29,16 @@ int contar_processos(void){
 
 int sorteio(int num_bilhetes){
     int sorteado = rand() % (num_bilhetes + 1);
-    printf("%d \n", sorteado);
     return sorteado;
 }
+
 
 int main()
 {
     srand(time(NULL));
     FILE *fp = fopen("entradaEscalonador.txt", "r");
     char ch, *processos, *alg;
-    int num_processos=0,count=0, num_bilhetes = 0, clock_cpu;
+    int num_processos=0,count=0, num_bilhetes = 0, clock_cpu, num_sorteado, sum_clocks;
 
     char linha[100];
 
@@ -71,9 +71,40 @@ int main()
     for (int i = 0; i < num_processos; i++)
     {
         num_bilhetes += lista_processos[i].bilhetes;
+        sum_clocks += lista_processos[i].clock;
     }
 
     printf("O número total de bilhetes do sorteio será: %d \n", num_bilhetes);
+    printf("O número total de clocks será: %d \n", sum_clocks);
+
+    do
+    {
+
+        num_sorteado = sorteio(num_bilhetes);
+        int aux = 0;
+        for(int i = 0; i < num_processos; i++){
+            if(num_sorteado < aux + lista_processos[i].bilhetes){
+                if(lista_processos[i].clock > 0){
+
+                    printf("O processo sorteado foi: %d \n", i);
+                    lista_processos[i].clock -= clock_cpu;
+                    sum_clocks -= clock_cpu;
+                    printf("%d \n", sum_clocks);
+                    printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, i);
+                    break;
+                
+                }
+            }
+            else{
+                aux += lista_processos[i].bilhetes;
+            }
+        }
+
+
+        
+    } while (sum_clocks != 0);
+    
+
     
     for(int i = 0; i < 10; i++){
         sorteio(num_bilhetes);
