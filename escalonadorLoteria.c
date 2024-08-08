@@ -38,7 +38,7 @@ int main()
     srand(time(NULL));
     FILE *fp = fopen("entradaEscalonador.txt", "r");
     char ch, *processos, *alg;
-    int num_processos=0,count=0, num_bilhetes = 0, clock_cpu, num_sorteado, sum_clocks;
+    int num_processos=0,count=0, num_bilhetes = 0, clock_cpu, num_sorteado, sum_clocks = 0;
 
     char linha[100];
 
@@ -86,11 +86,13 @@ int main()
             if(num_sorteado < aux + lista_processos[i].bilhetes){
                 if(lista_processos[i].clock > 0){
 
+                    printf("O numero sorteado foi: %d \n", num_sorteado);
                     printf("O processo sorteado foi: %d \n", i);
+                    sleep(1);
                     lista_processos[i].clock -= clock_cpu;
                     sum_clocks -= clock_cpu;
-                    printf("%d \n", sum_clocks);
                     printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, i);
+                    printf("\n");
                     break;
                 
                 }
@@ -98,18 +100,12 @@ int main()
             else{
                 aux += lista_processos[i].bilhetes;
             }
-        }
-
-
-        
+        }        
     } while (sum_clocks != 0);
     
 
-    
-    for(int i = 0; i < 10; i++){
-        sorteio(num_bilhetes);
-    };
 
     fclose(fp);
+
     return 0;
 }
