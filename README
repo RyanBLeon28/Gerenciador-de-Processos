@@ -1,9 +1,20 @@
+Para utilizar o programa
+    -Primeiro execute o arquivo geradorEntrada.c
+
+    -Depois execute o arquivo main.c
+
+
+
+
+
+
+
 
 Para utilizar o escalonador de CFS
 
     sudo apt-get update
     sudo apt-get install libglib2.0-dev 
-    gcc -o gtree_example gtree_example.c `pkg-config --cflags --libs glib-2.0`
+    gcc -o CFS escalonadorCFS.c `pkg-config --cflags --libs glib-2.0`
 
     *Obs: A função g_tree_foreach percorre a árvore da forma in-order
         Left - middle - right
