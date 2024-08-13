@@ -33,7 +33,7 @@ int main() {
     if (strcmp(alg, "CFS") == 0) {
         // pthread_create(&threads[0], NULL, callCFS, NULL);
     } 
-    else if (strcmp(alg, "Loteria") == 0) {
+    else if (strcmp(alg, "loteria") == 0) {
         escalonadorLoteria();
     } 
     // else if (strcmp(alg, "escalonadorAlternanciaCircular") == 0) {

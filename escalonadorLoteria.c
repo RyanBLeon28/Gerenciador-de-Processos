@@ -45,9 +45,8 @@ void* adicionar_processo(void* arg) {
         printf("Digite um novo processo (name|id|clock|bilhetes): \n");
         fgets(linha, sizeof(linha), stdin);
 
-<<<<<<< HEAD
-void escalonadorLoteria(){
-=======
+
+
         pthread_mutex_lock(&lock);
         num_processos++;
         lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
@@ -115,8 +114,8 @@ void* executar_processos(void* arg) {
     return NULL;
 }
 
-int main() {
->>>>>>> 15716a67616008c983e6a1c7ebbc2645f3e79a10
+void escalonadorLoteria() {
+
     srand(time(NULL));
     FILE *fp = fopen("entradaEscalonador1.txt", "r");
     char ch, *processos, *alg;
