@@ -19,7 +19,9 @@ Any additional information goes here
 
 ## 3. Loteria
 
-Any additional information goes here
+Este algoritmo seleciona os processos de maneira aleatória. Ele é baseado em uma loteria onde cada processo recebe uma quantidade específica de
+bilhetes. Ao ter seu bilhete sorteado, o processo recebe o direito de utilizar a CPU conforme o tempo dispanibilizado para ele. Assim que o tempo
+disponibilizado acabar, o processo sai da CPU e é realizado um novo sorteio. O algoritmo executa até não existir mais processos para serem sorteados.
 
 
 

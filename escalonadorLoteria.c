@@ -42,10 +42,8 @@ int sorteio(int num_bilhetes) {
 void* adicionar_processo(void* arg) {
     char linha[100];
     while (1) {
-        printf("Digite um novo processo (name|id|clock|bilhetes): \n");
+        printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n\n");
         fgets(linha, sizeof(linha), stdin);
-
-
 
         pthread_mutex_lock(&lock);
         num_processos++;
@@ -59,6 +57,7 @@ void* adicionar_processo(void* arg) {
 
         num_bilhetes += lista_processos[num_processos - 1].bilhetes;
         sum_clocks += lista_processos[num_processos - 1].clock;
+
 
         printf("Novo processo adicionado: %s\n", lista_processos[num_processos - 1].name);
         printf("Id: %d \n", lista_processos[num_processos - 1].id);
@@ -81,17 +80,20 @@ void* executar_processos(void* arg) {
         for (int i = 0; i < num_processos; i++) {
             if (num_sorteado < aux + lista_processos[i].bilhetes) {
                 if (lista_processos[i].clock > 0) {
-                    printf("O número sorteado foi: %d \n", num_sorteado);
-                    printf("O processo sorteado foi: %d \n", i);
-                    sleep(0.5);
+                    //printf("O número sorteado foi: %d \n", num_sorteado);
+                    printf("O processo %d está na CPU \n", lista_processos[i].id);
                     lista_processos[i].clock -= clock_cpu;
                     sum_clocks -= clock_cpu;
                     tempo += clock_cpu;
-                    printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, i);
+                    printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, lista_processos[i].id);
                     if(lista_processos[i].clock <= 0){
                         lista_processos[i].tempo_exec = tempo;
                         num_bilhetes -= lista_processos[i].bilhetes;
+                        lista_processos[i].bilhetes = 0;
+                        // printf("%d \n\n", num_bilhetes);
+                        printf("Processo %d finalizado \n", lista_processos[i].id);
                     }
+                    // printf("O processo %d saiu da CPU \n", lista_processos[i].id);
                     printf("\n");
                     break;
                 }
@@ -101,7 +103,7 @@ void* executar_processos(void* arg) {
         }
         pthread_mutex_unlock(&lock);
 
-        sleep(1);  // Adicione um pequeno delay para evitar loop excessivo
+        sleep(1);  
     }
 
     FILE *fp = fopen("SaidaLoteria.txt", "w");
@@ -127,12 +129,12 @@ void escalonadorLoteria() {
 
     while (fgets(linha, sizeof(linha), fp)) { // Mostra qual o algoritmo e o clock
         alg = strtok(linha, "|");
-        printf("O algoritmo é: %s\n", alg);
+        //printf("O algoritmo é: %s\n", alg);
         clock_cpu = atoi(strtok(NULL, "|"));
         break;
     }
 
-    printf("A fração da CPU será: %d\n", clock_cpu);
+    // printf("A fração da CPU será: %d\n", clock_cpu);
 
     num_processos = contar_processos(); // Conta quantos processos existem
 
@@ -144,10 +146,10 @@ void escalonadorLoteria() {
         lista_processos[count].clock = atoi(strtok(NULL, "|"));
         lista_processos[count].bilhetes = atoi(strtok(NULL, "|"));
         lista_processos[count].tempo_exec = 0;
-        printf("Processo: %s \n", lista_processos[count].name);
-        printf("Id: %d \n", lista_processos[count].id);
-        printf("Clock: %d \n", lista_processos[count].clock);
-        printf("Bilhetes: %d \n\n", lista_processos[count].bilhetes);
+        // printf("Processo: %s \n", lista_processos[count].name);
+        // printf("Id: %d \n", lista_processos[count].id);
+        // printf("Clock: %d \n", lista_processos[count].clock);
+        // printf("Bilhetes: %d \n\n", lista_processos[count].bilhetes);
         count++;
     }
 
@@ -156,8 +158,8 @@ void escalonadorLoteria() {
         sum_clocks += lista_processos[i].clock;
     }
 
-    printf("O número total de bilhetes do sorteio será: %d \n", num_bilhetes);
-    printf("O número total de clocks será: %d \n", sum_clocks);
+    //printf("O número total de bilhetes do sorteio será: %d \n", num_bilhetes);
+    //printf("O número total de clocks será: %d \n", sum_clocks);
 
     pthread_t thread_exec, thread_add;
 
