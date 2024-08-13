@@ -155,11 +155,11 @@ int main() {
 
     pthread_t thread_exec, thread_add;
 
+    pthread_create(&thread_add, NULL, adicionar_processo, NULL);
     // Criando a thread que executa os processos
     pthread_create(&thread_exec, NULL, executar_processos, &clock_cpu);
 
     // Criando a thread que permite adicionar novos processos
-    pthread_create(&thread_add, NULL, adicionar_processo, NULL);
 
     // Aguardando a thread de execução dos processos terminar
     pthread_join(thread_exec, NULL);
