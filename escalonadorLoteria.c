@@ -102,10 +102,13 @@ void* executar_processos(void* arg) {
         sleep(1);  // Adicione um pequeno delay para evitar loop excessivo
     }
 
+    FILE *fp = fopen("SaidaLoteria.txt", "w");
+
     for(int i = 0; i < num_processos; i++){
-        printf("O tempo de execução do processo %d foi %d clocks \n", i, lista_processos[i].tempo_exec);
+        fprintf(fp,"O tempo de execução do processo %d foi %d clocks \n", i, lista_processos[i].tempo_exec);
     }
 
+    fclose(fp);
     return NULL;
 }
 
