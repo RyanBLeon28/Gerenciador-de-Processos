@@ -49,11 +49,11 @@ int main() {
         timeString[12],
         priorityString[12]; 
 
-    int min = 1, max = 99;
+    int min = clock, max = 99;
 	for(int i = 0; i < nProcess; i++){
         sprintf(intString, "%d", i);
 
-        time = (rand() % (max - min + 1)) + min;
+        time = (rand() % ((max / clock) - (min / clock) + 1) + (min / clock)) * clock;
         sprintf(timeString, "%d", time);
 
         priority = (rand() % (max - min + 1)) + min; 
