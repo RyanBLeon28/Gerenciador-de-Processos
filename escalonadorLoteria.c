@@ -20,7 +20,7 @@ int sum_clocks = 0;
 int tempo = 0;
 pthread_mutex_t lock;
 
-int contar_processos(void) {
+int contar_processos(void){
     FILE *fp = fopen("entradaEscalonador1.txt", "r");
     int count = 0;
     char ch;
@@ -112,8 +112,9 @@ void* executar_processos(void* arg) {
 int main() {
     srand(time(NULL));
     FILE *fp = fopen("entradaEscalonador1.txt", "r");
-    char ch, *alg;
-    int count = 0, clock_cpu;
+    char ch, *processos, *alg;
+    int num_processos=0,count=0, num_bilhetes = 0, clock_cpu, num_sorteado, sum_clocks = 0;
+
     char linha[100];
 
     pthread_mutex_init(&lock, NULL);
