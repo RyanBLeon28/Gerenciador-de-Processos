@@ -113,7 +113,7 @@ int main() {
     srand(time(NULL));
     FILE *fp = fopen("entradaEscalonador1.txt", "r");
     char ch, *processos, *alg;
-    int num_processos=0,count=0, num_bilhetes = 0, clock_cpu, num_sorteado, sum_clocks = 0;
+    int count = 0, clock_cpu;
 
     char linha[100];
 
