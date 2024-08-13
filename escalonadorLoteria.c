@@ -33,8 +33,7 @@ int sorteio(int num_bilhetes){
 }
 
 
-int main()
-{
+void escalonadorLoteria(){
     srand(time(NULL));
     FILE *fp = fopen("entradaEscalonador1.txt", "r");
     char ch, *processos, *alg;
@@ -106,6 +105,4 @@ int main()
 
 
     fclose(fp);
-
-    return 0;
 }

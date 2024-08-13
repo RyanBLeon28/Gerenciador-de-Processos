@@ -14,13 +14,13 @@ typedef struct {
     int clock_cpu;
 } ClockCPU;
 
-typedef struct {
-    char name[20];
-    int id,
-        clock,
-        priority,
-        isAvailable;
-} Process;
+// typedef struct {
+//     char name[20];
+//     int id,
+//         clock,
+//         priority,
+//         isAvailable;
+// } Process;
 
 typedef struct {
     GTree *tree;
@@ -95,27 +95,23 @@ gboolean execProcess(gpointer key, gpointer value, gpointer user_data) {
     return FALSE;
 }
 
-// Função que encapsula o código do escalonador
 void escalonadorCFS(Process process) {
     const char *filename = "entradaEscalonador1.txt";
-
     char *alg;
     int clock_cpu;
     char linha[100];
-
-    // Cria a árvore Red-Black
     GTree *tree = g_tree_new(compare_ints);
     ClockCPU *clock = NULL;
 
     if (isProcessEmpty(process)) {
         printf("Process is empty.\n");
-        
+
         FILE *fp = fopen(filename, "r");
         if (fp == NULL) {
             perror("Erro ao abrir o arquivo");
             exit(EXIT_FAILURE);
         }
-        
+
         // Lê o algoritmo e o clock
         if (fgets(linha, sizeof(linha), fp)) {
             alg = strtok(linha, "|");
@@ -144,15 +140,18 @@ void escalonadorCFS(Process process) {
         printf("\n Lista de processos\n");
         g_tree_foreach(tree, print_key_value, NULL);
 
-        fclose(fp); // Certifique-se de fechar o arquivo
+        fclose(fp);
     }
-    
-    // Executando o escalonamento CFS
+
     printf("\n----------Inicio do escalonamento CFS----------\n");
+    printf("RECEBIDO - ID: %d, Clock: %d, Prioridade: %d\n", 
+                   process.id, process.clock, process.priority);
+
     while (TRUE) {
         gboolean stop_iteration = FALSE;
         ExecData data = {tree, clock, NULL, &stop_iteration};
-
+        
+        printf("Entrou no while\n");
         pthread_mutex_lock(&mutex);
         if (process.isAvailable) {
             int *clock_copy = malloc(sizeof(int));
@@ -163,19 +162,18 @@ void escalonadorCFS(Process process) {
 
             g_tree_insert(tree, clock_copy, new_process);
 
-            printf("Novo processo adicionado - ID: %d, Clock: %d, Prioridade: %d\n", 
+            printf("RECEBIDO - ID: %d, Clock: %d, Prioridade: %d\n", 
                    new_process->id, new_process->clock, new_process->priority);
 
             process.isAvailable = 0;
         }
         pthread_mutex_unlock(&mutex);
 
-        g_tree_foreach(tree, execProcess, &data);    // Processo entra na CPU
-
-        removeProcess(&data);                        // Remove os processos que acabaram
+        g_tree_foreach(tree, execProcess, &data);
+        removeProcess(&data);
 
         if (stop_iteration) {
-            continue; // volta pro inicio do loop
+            continue;
         }
 
         if (g_tree_nnodes(tree) == 0) {
@@ -184,7 +182,6 @@ void escalonadorCFS(Process process) {
         sleep(1);
     }
 
-    // Liberando a árvore, a estrutura e o arquivo
     g_tree_destroy(tree);
     free(clock);
 }
