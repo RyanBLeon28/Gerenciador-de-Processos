@@ -3,3 +3,6 @@
 
 #Ignorar o arquivo out
 *.out
+
+#Ignorar o arquivo main
+main

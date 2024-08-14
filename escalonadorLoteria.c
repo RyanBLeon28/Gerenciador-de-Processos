@@ -107,6 +107,7 @@ void* executar_processos(void* arg) {
         sleep(1);  
     }
 
+    printf("Todos os processos foram encerrados\n");
     FILE *fp = fopen("SaidaLoteria.txt", "w");
     fprintf(fp,"ID | TEMPO DE EXECUÇÃO\n");
     for(int i = 0; i < num_processos; i++){
