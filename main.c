@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-//#include "escalonadorCFS.h"
+#include "escalonadorCFS.h"
 #include "escalonadorLoteria.h"
 // #include "escalonadorPrioridade.h"
 // #include "escalonadorAlternanciaCircular.h"
@@ -30,8 +30,8 @@ int main() {
         clock_cpu = atoi(strtok(NULL, "|"));
     }
     
-    if (strcmp(alg, "CFS") == 0) {
-        // pthread_create(&threads[0], NULL, callCFS, NULL);
+    if (strcmp(alg, "cfs") == 0) {
+        escalonadorCFS();
     } 
     else if (strcmp(alg, "loteria") == 0) {
         escalonadorLoteria();

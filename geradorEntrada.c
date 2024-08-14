@@ -26,7 +26,7 @@ int main() {
         case 1: algChosen = "alternanciaCircular"; break;
         case 2: algChosen = "prioridade"; break;
         case 3: algChosen = "loteria"; break;
-        case 4: algChosen = "CFS"; break;
+        case 4: algChosen = "cfs"; break;
         default:
             printf("O algoritmo informado nao existe\n");
             return 1;

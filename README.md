@@ -27,8 +27,8 @@ disponibilizado acabar, o processo sai da CPU e é realizado um novo sorteio. O 
 
 ## 4. Completely Fair Scheduler (CFS)
 
-Any additional information goes here
-
+Este escalonador usa uma Red-Black Tree para balancear qual processo usará a CPU de acordo com o seu clock. A cada vez que o processo passa pela CPU é diminuido o seu tempo necessário para conclusão do processo menos o tempo que ficou processando. Caso o valor seja menor que o tempo dado pela CPU, esse processo é removido da árvore(lista de processos) e novamente a árvore é balanceada.
+Como o algoritmo é preemptivo, pode ser feita a inserção de um novo processo. Dessa forma, quando é inserido um novo processo, é usado um mutex, para parar a thread que está executando os processos e esse novo processo é inserido e a árvore é novamente balanceada.
 
 
 ## Dependências
@@ -45,7 +45,7 @@ Para executar o projeto basta rodar os seguintes comandos via terminal:
   ./geradorEntrada
 ```
 ```bash
-  gcc main.c -o main
+  gcc main.c -o main escalonadorCFS.c escalonadorLoteria.c `pkg-config --cflags --libs glib-2.0`
   ./main
 ```
 
