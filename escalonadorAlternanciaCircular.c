@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Declarando a estrutura de um processo
 typedef struct st_process{
     char name[50];
     int id;
@@ -11,8 +10,8 @@ typedef struct st_process{
     int latency;
 }process;
 
-int handleProcesses(const char *entrada){
-    FILE *file = fopen(entrada, "r");
+int handleProcesses(const char *input){
+    FILE *file = fopen(input, "r");
     int contador = 0;
     char c, letra = '\n';
     while(fread (&c, sizeof(char), 1, file)) {
@@ -27,19 +26,19 @@ int handleProcesses(const char *entrada){
 
 int main() {
 
-    // Declarando variáveis
-    const char *entrada = "entradaEscalonador1.txt";
-    int numberP = handleProcesses(entrada);
+    const char *input = "entradaEscalonador1.txt";
+    int numberP = handleProcesses(input);
     int clock;
     char line[100];
     char name[100];
     int id, time, ticket;
+    int latency = 0;
     int counter = 0;
     int all_zero = 0; 
 
     process *list = (process *)malloc(numberP * sizeof(process));
     
-    FILE *file = fopen(entrada, "r");
+    FILE *file = fopen(input, "r");
     if (file == NULL) {
         printf("Erro ao abrir o arquivo.\n");
         return 1;
@@ -68,27 +67,39 @@ int main() {
     
     while (!all_zero) {
         all_zero = 1; 
-        int latency = 0;
 
         for(int i = 1; i < counter; i++) {
             if (list[i].clock > 0) {
                 if (list[i].clock < clock) {
                     latency += list[i].clock;
-                    list[i].latency += latency;
+                    list[i].latency = latency;
                     list[i].clock -= list[i].clock;  
                 } else {
                     list[i].clock -= clock;  
                     latency += clock;
-                    list[i].latency += latency;
+                    list[i].latency = latency;
                 }
-                /* printf("id:%d|%d| lat: %d \n", list[i].id, list[i].clock, list[i].latency); */
+                printf("id:%d|%d\n", list[i].id, list[i].clock);
                 all_zero = 0;
             }
-            printf("id:%d|%d| lat: %d \n", list[i].id, list[i].clock, list[i].latency);
         }
         
         printf("\n");
     }
+
+    const char *dirFile = "./resultadoAlternanciaCircular.txt"; 
+    FILE *out = fopen(dirFile, "w");
+
+    if (out == NULL) {
+        perror("Erro ao criar o arquivo");
+        return 1;
+    }
+    fprintf(out, "id|latência\n");
+    
+    for(int j = 1; j < counter; j++) {
+        fprintf(out, "%d|%d\n", list[j].id, list[j].latency);
+    }
+    fclose(out);
 
     free(list);
     fclose(file);
