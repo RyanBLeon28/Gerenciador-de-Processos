@@ -40,9 +40,10 @@ int sorteio(int num_bilhetes) {
 }
 
 void* adicionar_processo(void* arg) {
+    printf("\n");
+    printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n\n");
     char linha[100];
     while (1) {
-        printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n\n");
         fgets(linha, sizeof(linha), stdin);
 
         pthread_mutex_lock(&lock);
@@ -58,7 +59,7 @@ void* adicionar_processo(void* arg) {
         num_bilhetes += lista_processos[num_processos - 1].bilhetes;
         sum_clocks += lista_processos[num_processos - 1].clock;
 
-
+        printf("\n");
         printf("Novo processo adicionado: %s\n", lista_processos[num_processos - 1].name);
         printf("Id: %d \n", lista_processos[num_processos - 1].id);
         printf("Clock: %d \n", lista_processos[num_processos - 1].clock);
@@ -107,9 +108,10 @@ void* executar_processos(void* arg) {
     }
 
     FILE *fp = fopen("SaidaLoteria.txt", "w");
-
+    fprintf(fp,"ID | TEMPO DE EXECUÇÃO\n");
     for(int i = 0; i < num_processos; i++){
-        fprintf(fp,"O tempo de execução do processo %d foi %d clocks \n", i, lista_processos[i].tempo_exec);
+        fprintf(fp,"%d | ", lista_processos[i].id);
+        fprintf(fp,"       %d \n", lista_processos[i].tempo_exec);
     }
 
     fclose(fp);
