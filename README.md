@@ -45,7 +45,7 @@ Para executar o projeto basta rodar os seguintes comandos via terminal:
   ./geradorEntrada
 ```
 ```bash
-  gcc main.c -o main escalonadorCFS.c escalonadorLoteria.c `pkg-config --cflags --libs glib-2.0`
+  gcc main.c -o main escalonadorAlternanciaCircular.c escalonadorCFS.c escalonadorLoteria.c escalonadorPrioridade.c `pkg-config --cflags --libs glib-2.0`
   ./main
 ```
 
