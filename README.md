@@ -51,6 +51,7 @@ Para executar o projeto basta rodar os seguintes comandos via terminal:
 
 ## Autores
 - [@Beatriz-SMB](https://github.com/Beatriz-SMB)
+- [@Knoshz](https://github.com/Knoshz)
 - [@RyanBLeon28](https://github.com/RyanBLeon28)
 - [@Vinimborges](https://github.com/Vinimborges)
 
