@@ -131,20 +131,19 @@ void* handleExecute(void* arg) {
                 /* all_zero = 0;  */
                 printf("id:%d|%d\n", cpu[i].id, cpu[i].clock);
                 printf("O processo %d saiu da CPU \n", cpu[i].id);
-            } else {
-                printf("Todos os processos foram encerrados\n");
-                printf("\n");
-                printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|Prioridade \n");
-                printf("\n");
-                printf("Caso queira encerrar digite (s) \n");
-                sleep(5);
+            } /* else {
+                
                 if (cpu[i].id == -1) {
                     break;
                 }
                 
-            }
+            } */
             printf("Processo %d finalizado", cpu[i].id);
+            printf("\n");
             sleep(1); 
+            printf("\nCaso queira adicionar um novo processo digite nesse formato: nome|id|clock|Prioridade \n");
+            printf("Caso queira encerrar digite (s) \n");
+            sleep(2);
             printf("\n");
         } 
            
