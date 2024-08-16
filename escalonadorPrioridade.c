@@ -66,7 +66,9 @@ void *recebe_novos_processos(void* arg){
         pthread_mutex_lock(&mutex_prioridade);  
 
         iterador++;
-        
+
+        lista_processosPR = realloc(lista_processosPR, iterador * sizeof(DadosProcessos));
+    
         char nome[50];
         int id , tempo, prioridade;
         int result = sscanf(linha, "processo-%[^|]|%d|%d|%d", nome, &id, &tempo, &prioridade); 
