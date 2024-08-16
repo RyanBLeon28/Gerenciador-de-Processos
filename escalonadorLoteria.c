@@ -44,26 +44,35 @@ void* adicionar_processo(void* arg) {
     printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes ");
     printf("\n");
     char linha[100];
+    char nome[50];
+    int clock, id, bilhetes;
     while (1) {
         fgets(linha, sizeof(linha), stdin);
 
         pthread_mutex_lock(&lock);
-        num_processos++;
-        lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
-        
-        strcpy(lista_processos[num_processos - 1].name, strtok(linha, "|"));
-        lista_processos[num_processos - 1].id = atoi(strtok(NULL, "|"));
-        lista_processos[num_processos - 1].clock = atoi(strtok(NULL, "|"));
-        lista_processos[num_processos - 1].bilhetes = atoi(strtok(NULL, "|"));
-        lista_processos[num_processos - 1].tempo_exec = tempo;
+        int result = sscanf(linha, "processo-%[^|]|%d|%d|%d", nome, &id, &clock, &bilhetes);
+        if (result == 4) { 
+            num_processos++;
+            lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
+            
+            strcpy(lista_processos[num_processos - 1].name, nome);
+            lista_processos[num_processos - 1].id = atoi(strtok(NULL, "|"));
+            lista_processos[num_processos - 1].clock = atoi(strtok(NULL, "|"));
+            lista_processos[num_processos - 1].bilhetes = atoi(strtok(NULL, "|"));
+            lista_processos[num_processos - 1].tempo_exec = tempo;
 
-        num_bilhetes += lista_processos[num_processos - 1].bilhetes;
-        sum_clocks += lista_processos[num_processos - 1].clock;
+            num_bilhetes += lista_processos[num_processos - 1].bilhetes;
+            sum_clocks += lista_processos[num_processos - 1].clock;
 
-        printf("Novo processo adicionado: %s\n", lista_processos[num_processos - 1].name);
-        printf("Id: %d \n", lista_processos[num_processos - 1].id);
-        printf("Clock: %d \n", lista_processos[num_processos - 1].clock);
-        printf("Bilhetes: %d \n\n", lista_processos[num_processos - 1].bilhetes);
+            printf("Novo processo adicionado: %s\n", lista_processos[num_processos - 1].name);
+            printf("Id: %d \n", lista_processos[num_processos - 1].id);
+            printf("Clock: %d \n", lista_processos[num_processos - 1].clock);
+            printf("Bilhetes: %d \n\n", lista_processos[num_processos - 1].bilhetes);
+        }
+        else{
+            int resultado
+        }
+
 
         pthread_mutex_unlock(&lock);
     }
@@ -73,41 +82,49 @@ void* adicionar_processo(void* arg) {
 void* executar_processos(void* arg) {
     int clock_cpu = *((int*)arg);
 
-    while (sum_clocks > 0) {
-        int num_sorteado = sorteio(num_bilhetes);
-        int aux = 0;
+    while (TRUE) {
+        if (sum_clocks > 0 )
+        {
+            int num_sorteado = sorteio(num_bilhetes);
+            int aux = 0;
 
-        pthread_mutex_lock(&lock);
-        for (int i = 0; i < num_processos; i++) {
-            if (num_sorteado < aux + lista_processos[i].bilhetes) {
-                if (lista_processos[i].clock > 0) {
-                    //printf("O número sorteado foi: %d \n", num_sorteado);
-                    printf("O processo %d está na CPU \n", lista_processos[i].id);
-                    lista_processos[i].clock -= clock_cpu;
-                    sum_clocks -= clock_cpu;
-                    tempo += clock_cpu;
-                    printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, lista_processos[i].id);
-                    if(lista_processos[i].clock <= 0){
-                        lista_processos[i].tempo_exec = tempo - lista_processos[i].tempo_exec;
-                        num_bilhetes -= lista_processos[i].bilhetes;
-                        lista_processos[i].bilhetes = 0;
-                        // printf("%d \n\n", num_bilhetes);
-                        printf("Processo %d finalizado \n", lista_processos[i].id);
+            pthread_mutex_lock(&lock);
+            for (int i = 0; i < num_processos; i++) {
+                if (num_sorteado < aux + lista_processos[i].bilhetes) {
+                    if (lista_processos[i].clock > 0) {
+                        //printf("O número sorteado foi: %d \n", num_sorteado);
+                        printf("O processo %d está na CPU \n", lista_processos[i].id);
+                        lista_processos[i].clock -= clock_cpu;
+                        sum_clocks -= clock_cpu;
+                        tempo += clock_cpu;
+                        printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, lista_processos[i].id);
+                        if(lista_processos[i].clock <= 0){
+                            lista_processos[i].tempo_exec = tempo - lista_processos[i].tempo_exec;
+                            num_bilhetes -= lista_processos[i].bilhetes;
+                            lista_processos[i].bilhetes = 0;
+                            // printf("%d \n\n", num_bilhetes);
+                            printf("Processo %d finalizado \n", lista_processos[i].id);
+                        }
+                        // printf("O processo %d saiu da CPU \n", lista_processos[i].id);
+                        printf("\n");
+                        break;
                     }
-                    // printf("O processo %d saiu da CPU \n", lista_processos[i].id);
-                    printf("\n");
-                    break;
+                } else {
+                    aux += lista_processos[i].bilhetes;
                 }
-            } else {
-                aux += lista_processos[i].bilhetes;
             }
-        }
-        pthread_mutex_unlock(&lock);
+            pthread_mutex_unlock(&lock);
 
-        sleep(1);  
+            sleep(1);       
+        }
+
+        else{
+            printf("Todos os processos foram encerrados\n");
+
+        }
+        
     }
 
-    printf("Todos os processos foram encerrados\n");
     FILE *fp = fopen("SaidaLoteria.txt", "w");
     fprintf(fp,"ID | TEMPO DE EXECUÇÃO\n");
     for(int i = 0; i < num_processos; i++){
