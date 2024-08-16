@@ -41,7 +41,8 @@ int sorteio(int num_bilhetes) {
 
 void* adicionar_processo(void* arg) {
     printf("\n");
-    printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n\n");
+    printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes ");
+    printf("\n");
     char linha[100];
     while (1) {
         fgets(linha, sizeof(linha), stdin);
@@ -54,12 +55,11 @@ void* adicionar_processo(void* arg) {
         lista_processos[num_processos - 1].id = atoi(strtok(NULL, "|"));
         lista_processos[num_processos - 1].clock = atoi(strtok(NULL, "|"));
         lista_processos[num_processos - 1].bilhetes = atoi(strtok(NULL, "|"));
-        lista_processos[num_processos - 1].tempo_exec = 0;
+        lista_processos[num_processos - 1].tempo_exec = tempo;
 
         num_bilhetes += lista_processos[num_processos - 1].bilhetes;
         sum_clocks += lista_processos[num_processos - 1].clock;
 
-        printf("\n");
         printf("Novo processo adicionado: %s\n", lista_processos[num_processos - 1].name);
         printf("Id: %d \n", lista_processos[num_processos - 1].id);
         printf("Clock: %d \n", lista_processos[num_processos - 1].clock);
@@ -88,7 +88,7 @@ void* executar_processos(void* arg) {
                     tempo += clock_cpu;
                     printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, lista_processos[i].id);
                     if(lista_processos[i].clock <= 0){
-                        lista_processos[i].tempo_exec = tempo;
+                        lista_processos[i].tempo_exec = tempo - lista_processos[i].tempo_exec;
                         num_bilhetes -= lista_processos[i].bilhetes;
                         lista_processos[i].bilhetes = 0;
                         // printf("%d \n\n", num_bilhetes);
