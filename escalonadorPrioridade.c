@@ -67,7 +67,7 @@ void *recebe_novos_processos(void* arg){
 
         iterador++;
 
-        lista_processosPR = realloc(iterador * sizeof(DadosProcessos));
+        lista_processosPR = realloc(lista_processosPR, iterador * sizeof(DadosProcessos));
     
         char nome[50];
         int id , tempo, prioridade;
