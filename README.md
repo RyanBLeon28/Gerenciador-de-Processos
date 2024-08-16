@@ -13,7 +13,7 @@ Este algoritmo seleciona processos de forma circular e equitativa. Cada processo
 
 ## 2. Prioridade
 
-Any additional information goes here
+O algoritmo do escalonador por prioridade seleciona o processo que possui a maior prioridade (maior número). Após uma execução (um cloack) do processo selecionado, anteriormente, o algoritmo seleciona mais uma vez o processo de maior prioridade. Quando um processo finaliza sua execução, ele tem sua prioridade é zerada. Esse procedimeto se repete para todos os processos. Depois que todos os processos foram executados, o usuário tem a opção de encerrar o algoritmo (digitando 's') ou passar mais um processo (seguindo o padrão: Nome do processo|id|prioridade|clock). A inserção de novos processos pode ser realizada durante a execução do programa (seguindo o mesmo padrão). 
 
 
 
