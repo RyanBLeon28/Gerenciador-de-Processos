@@ -41,7 +41,7 @@ int sorteio(int num_bilhetes) {
 
 void* adicionar_processo(void* arg) {
     printf("\n");
-    printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes ");
+    printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n");
     printf("\n");
     char linha[100];
     char nome[50];
@@ -56,9 +56,9 @@ void* adicionar_processo(void* arg) {
             lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
             
             strcpy(lista_processos[num_processos - 1].name, nome);
-            lista_processos[num_processos - 1].id = atoi(strtok(NULL, "|"));
-            lista_processos[num_processos - 1].clock = atoi(strtok(NULL, "|"));
-            lista_processos[num_processos - 1].bilhetes = atoi(strtok(NULL, "|"));
+            lista_processos[num_processos - 1].id = id;
+            lista_processos[num_processos - 1].clock = clock;
+            lista_processos[num_processos - 1].bilhetes = bilhetes;
             lista_processos[num_processos - 1].tempo_exec = tempo;
 
             num_bilhetes += lista_processos[num_processos - 1].bilhetes;
@@ -70,7 +70,14 @@ void* adicionar_processo(void* arg) {
             printf("Bilhetes: %d \n\n", lista_processos[num_processos - 1].bilhetes);
         }
         else{
-            int resultado
+            int resultado = sscanf(linha, "%s", nome);
+
+                if(resultado == 1 && (strcmp(nome, "s") == 0 || strcmp(nome, "S") == 0)){
+                    num_processos++;
+                    lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
+                    lista_processos[num_processos-1].id = -1;
+                    break;
+                }
         }
 
 
@@ -82,7 +89,7 @@ void* adicionar_processo(void* arg) {
 void* executar_processos(void* arg) {
     int clock_cpu = *((int*)arg);
 
-    while (TRUE) {
+    while (1) {
         if (sum_clocks > 0 )
         {
             int num_sorteado = sorteio(num_bilhetes);
@@ -119,17 +126,28 @@ void* executar_processos(void* arg) {
         }
 
         else{
+            if(lista_processos[num_processos -1].id == -1){
+                break;
+            }
             printf("Todos os processos foram encerrados\n");
-
+            printf("\n");
+            printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n");
+            printf("\n");
+            printf("Caso queira encerrar digite (s) \n");
+            sleep(5);
         }
         
     }
 
     FILE *fp = fopen("SaidaLoteria.txt", "w");
-    fprintf(fp,"ID | TEMPO DE EXECUÇÃO\n");
+    fprintf(fp,"ID | LATÊNCIA\n");
     for(int i = 0; i < num_processos; i++){
-        fprintf(fp,"%d | ", lista_processos[i].id);
-        fprintf(fp,"       %d \n", lista_processos[i].tempo_exec);
+        if (lista_processos[i].id >= 0)
+        {
+            fprintf(fp,"%d | ", lista_processos[i].id);
+            fprintf(fp,"       %d \n", lista_processos[i].tempo_exec);
+        }
+        
     }
 
     fclose(fp);
