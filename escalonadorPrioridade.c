@@ -41,9 +41,13 @@ int conta_processos(){
 void criando_arquivo(){
     int i = 0;
     FILE* arquivo_3 = fopen("SaidaPrioridade.txt", "w");
+    fprintf(arquivo_3, "ID | LATÊNCIA\n");
 
     while (i < iterador){
-        fprintf(arquivo_3, "Id:%d\tLatência:%d\n", lista_processosPR[i].id, lista_processosPR[i].latencia);
+        if (lista_processosPR[i].id >= 0){
+            fprintf(arquivo_3, "%d | ", lista_processosPR[i].id);
+            fprintf(arquivo_3, "%d\n", lista_processosPR[i].latencia);
+        }
         i++;
     }
 }
@@ -145,7 +149,7 @@ void *executando_processos(void* arg){
     }
 }
 
-void escalonadorPrioridade (){
+void escalonadorPrioridade(){
     char linha[50];
     int controlador = 0, numero_processos = 0, i = 0;
     int clock;
