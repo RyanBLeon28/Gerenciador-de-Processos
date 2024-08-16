@@ -5,7 +5,7 @@
 #include <time.h>
 #include <pthread.h>
 
-typedef struct st_processo {
+typedef struct st_processo { // Define a estrutura que terá o processo
     char name[20];
     int id;
     int clock;
@@ -13,14 +13,14 @@ typedef struct st_processo {
     int tempo_exec;
 } processo;
 
-processo *lista_processos = NULL;
+processo *lista_processos = NULL; //Cria uma lista de processos vazia
 int num_processos = 0;
 int num_bilhetes = 0;
 int sum_clocks = 0;
 int tempo = 0;
-pthread_mutex_t lock;
+pthread_mutex_t lock; //Cria uma variável que funcionará como uma flag entre as threads
 
-int contar_processos(void){
+int contar_processos(void){ //Conta quantos processos tem no arquivo de entrada
     FILE *fp = fopen("entradaEscalonador1.txt", "r");
     int count = 0;
     char ch;
@@ -34,27 +34,27 @@ int contar_processos(void){
     return count - 1;
 }
 
-int sorteio(int num_bilhetes) {
+int sorteio(int num_bilhetes) {//Realiza o sorteio 
     int sorteado = rand() % (num_bilhetes + 1);
     return sorteado;
 }
 
 void* adicionar_processo(void* arg) {
+    /*É a função da thread que ficará sempre aguardando o usuário digitar
+    um novo processo enquanto os outros estão execuntado*/
     printf("\n");
     printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n");
-    printf("\n");
     char linha[100];
     char nome[50];
     int clock, id, bilhetes;
     while (1) {
-        fgets(linha, sizeof(linha), stdin);
+        fgets(linha, sizeof(linha), stdin); //Lê a entrada do usuário
 
         pthread_mutex_lock(&lock);
-        int resultado = sscanf(linha, "processo-%[^|]|%d|%d|%d", nome, &id, &clock, &bilhetes);
-        if (resultado == 4) { 
-            num_processos++;
-            lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
-            
+        num_processos++;
+        lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
+        int resultado = sscanf(linha, "%[^|]|%d|%d|%d", nome, &id, &clock, &bilhetes);
+        if (resultado == 4) {//Verifica se o usuário digitou 4 parâmetros
             strcpy(lista_processos[num_processos - 1].name, nome);
             lista_processos[num_processos - 1].id = id;
             lista_processos[num_processos - 1].clock = clock;
@@ -72,9 +72,7 @@ void* adicionar_processo(void* arg) {
         else{
             int resultado = sscanf(linha, "%s", nome);
 
-                if(resultado == 1 && (strcmp(nome, "s") == 0 || strcmp(nome, "S") == 0)){
-                    num_processos++;
-                    lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
+                if(resultado == 1 && (strcmp(nome, "s") == 0 || strcmp(nome, "S") == 0)){//Verifica se o usuário quer encerrar o programa
                     lista_processos[num_processos-1].id = -1;
                     break;
                 }
@@ -87,6 +85,10 @@ void* adicionar_processo(void* arg) {
 }
 
 void* executar_processos(void* arg) {
+    /*É a função que executa os processos na CPU*/
+
+    printf("\n----------Inicio do escalonamento Loteria----------\n");
+    printf("\n");
     int clock_cpu = *((int*)arg);
 
     while (1) {
@@ -98,21 +100,18 @@ void* executar_processos(void* arg) {
             pthread_mutex_lock(&lock);
             for (int i = 0; i < num_processos; i++) {
                 if (num_sorteado < aux + lista_processos[i].bilhetes) {
-                    if (lista_processos[i].clock > 0) {
-                        //printf("O número sorteado foi: %d \n", num_sorteado);
+                    if (lista_processos[i].clock > 0) {//Verifica se o processo ainda precisa ser executado
                         printf("O processo %d está na CPU \n", lista_processos[i].id);
                         lista_processos[i].clock -= clock_cpu;
                         sum_clocks -= clock_cpu;
                         tempo += clock_cpu;
                         printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, lista_processos[i].id);
-                        if(lista_processos[i].clock <= 0){
+                        if(lista_processos[i].clock <= 0){ //Verifica se acabou o tempo de execução do processo
                             lista_processos[i].tempo_exec = tempo - lista_processos[i].tempo_exec;
                             num_bilhetes -= lista_processos[i].bilhetes;
                             lista_processos[i].bilhetes = 0;
-                            // printf("%d \n\n", num_bilhetes);
                             printf("Processo %d finalizado \n", lista_processos[i].id);
                         }
-                        // printf("O processo %d saiu da CPU \n", lista_processos[i].id);
                         printf("\n");
                         break;
                     }
@@ -126,7 +125,8 @@ void* executar_processos(void* arg) {
         }
 
         else{
-            if(lista_processos[num_processos -1].id == -1){
+            if(lista_processos[num_processos -1].id == -1){// Verifica se o usuário quer encerrar o programa
+                printf("Programa encerrado \n");
                 break;
             }
             printf("Todos os processos foram encerrados\n");
@@ -139,6 +139,7 @@ void* executar_processos(void* arg) {
         
     }
 
+    /*Escreve no arquivo de saída a latência dos processos*/
     FILE *fp = fopen("SaidaLoteria.txt", "w");
     fprintf(fp,"ID | LATÊNCIA\n");
     for(int i = 0; i < num_processos; i++){
@@ -165,55 +166,41 @@ void escalonadorLoteria() {
 
     pthread_mutex_init(&lock, NULL);
 
-    while (fgets(linha, sizeof(linha), fp)) { // Mostra qual o algoritmo e o clock
+    while (fgets(linha, sizeof(linha), fp)) { //Verifica o algoritmo e o clock da cpu
         alg = strtok(linha, "|");
-        //printf("O algoritmo é: %s\n", alg);
         clock_cpu = atoi(strtok(NULL, "|"));
         break;
     }
 
-    // printf("A fração da CPU será: %d\n", clock_cpu);
+    num_processos = contar_processos();
 
-    num_processos = contar_processos(); // Conta quantos processos existem
+    lista_processos = malloc(num_processos * sizeof(processo)); // Cria uma lista com a quantidade de processos do arquivo de entrada
 
-    lista_processos = malloc(num_processos * sizeof(processo)); // Cria uma lista com as informações dos processos
-
-    while (fgets(linha, sizeof(linha), fp)) {
+    while (fgets(linha, sizeof(linha), fp)) {//Adiciona os processos na lista
         strcpy(lista_processos[count].name, strtok(linha, "|"));
         lista_processos[count].id = atoi(strtok(NULL, "|"));
         lista_processos[count].clock = atoi(strtok(NULL, "|"));
         lista_processos[count].bilhetes = atoi(strtok(NULL, "|"));
         lista_processos[count].tempo_exec = 0;
-        // printf("Processo: %s \n", lista_processos[count].name);
-        // printf("Id: %d \n", lista_processos[count].id);
-        // printf("Clock: %d \n", lista_processos[count].clock);
-        // printf("Bilhetes: %d \n\n", lista_processos[count].bilhetes);
         count++;
     }
 
-    for (int i = 0; i < num_processos; i++) {
+    for (int i = 0; i < num_processos; i++) { //Calcula a quantidade de bilhetes e o clock total
         num_bilhetes += lista_processos[i].bilhetes;
         sum_clocks += lista_processos[i].clock;
     }
 
-    //printf("O número total de bilhetes do sorteio será: %d \n", num_bilhetes);
-    //printf("O número total de clocks será: %d \n", sum_clocks);
-
     pthread_t thread_exec, thread_add;
 
-    pthread_create(&thread_add, NULL, adicionar_processo, NULL);
-    // Criando a thread que executa os processos
-    pthread_create(&thread_exec, NULL, executar_processos, &clock_cpu);
+    pthread_create(&thread_add, NULL, adicionar_processo, NULL); //Cria a thread que adiciona processos
 
-    // Criando a thread que permite adicionar novos processos
+    pthread_create(&thread_exec, NULL, executar_processos, &clock_cpu); //Cria a thread que executa os processos
 
-    // Aguardando a thread de execução dos processos terminar
-    pthread_join(thread_exec, NULL);
+    pthread_join(thread_exec, NULL);//Espera a finalizaçao da thread de execução
 
-    // Cancelando a thread de adição de processos, pois o loop principal acabou
-    pthread_cancel(thread_add);
+    pthread_cancel(thread_add); //Finaliza a thread de adicionar processos
 
-    free(lista_processos);
-    pthread_mutex_destroy(&lock);
-    fclose(fp);
+    free(lista_processos); //Limpa a memória
+    pthread_mutex_destroy(&lock); //Exclui a variável de flag
+    fclose(fp); //Fecha o arquivo
 }
