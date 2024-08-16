@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include "escalonadorCFS.h"
 #include "escalonadorLoteria.h"
-// #include "escalonadorPrioridade.h"
+#include "escalonadorPrioridade.h"
 #include "escalonadorAlternanciaCircular.h"
 
 #define TRUE 1
@@ -39,9 +39,9 @@ int main() {
     else if (strcmp(alg, "alternanciaCircular") == 0) {
         escalonadorAC();
     } 
-    // else if (strcmp(alg, "escalonadorPrioridade") == 0) {
-    //     escalonadorPrioridade(filename);
-    // } 
+    else if (strcmp(alg, "prioridade") == 0) {
+        escalonadorPrioridade();
+    } 
     else {
         printf("Algoritmo desconhecido: %s\n", alg);
     }

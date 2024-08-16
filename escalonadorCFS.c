@@ -16,13 +16,15 @@ typedef struct {
 } ClockCPU;
 
 ClockCPU *cpuClock;
+int currentClock = 0;
 
 typedef struct {
     char name[20];
     int id,
         clock,
         priority,
-        isAvailable;
+        latency,
+        currentLatency;
 } Process;
 
 pthread_mutex_t lockCFS;
@@ -33,10 +35,6 @@ typedef struct {
     GList *processes_to_remove;
     gboolean *stop_iteration;
 } ExecData;
-
-bool isProcessEmpty(Process p) {
-    return p.isAvailable == 0 && p.id == 0 && p.clock == 0 && p.priority == 0;
-}
 
 // Função de comparação usada pelo GTree
 gint compare_ints(gconstpointer a, gconstpointer b) {
@@ -53,9 +51,20 @@ gboolean print_key_value(gpointer key, gpointer value, gpointer user_data) {
 
 void removeProcess(ExecData *data) {
     GList *iter = data->processes_to_remove;
+    FILE *fp = fopen("SaidaCFS.txt", "a");
+
     while (iter != NULL) {
         int *key = (int *)iter->data; // Chave a ser removida
         Process *process = g_tree_lookup(data->tree, key); // Buscar o processo correspondente
+
+        int newLatency = process->latency - process->currentLatency;
+        process->latency = newLatency;
+        printf("\nLat final: %d - %d \n", process->latency, process->currentLatency);
+
+        //escreve o valor da latencia antes de excluir o processo
+        fprintf(fp,"%d | ", process->id);
+        fprintf(fp,"    %d \n", process->latency);
+
         if (process != NULL) {
             g_tree_remove(data->tree, key);
             printf("\nProcesso ID: %d encerrou\n", process->id);
@@ -66,6 +75,7 @@ void removeProcess(ExecData *data) {
     }
     g_list_free(data->processes_to_remove);
     data->processes_to_remove = NULL;
+    fclose(fp);
 }
 
 void* adicionar_processo_CFS(void* arg) {
@@ -81,7 +91,8 @@ void* adicionar_processo_CFS(void* arg) {
         process->id = atoi(strtok(NULL, "|"));
         process->clock = atoi(strtok(NULL, "|"));
         process->priority = atoi(strtok(NULL, "\n"));
-
+        process->currentLatency = currentClock;
+        
         int *clock_copy = malloc(sizeof(int));
         *clock_copy = process->clock;
 
@@ -100,6 +111,9 @@ void* adicionar_processo_CFS(void* arg) {
 
 // Funcao para executar o processo dentro da CPU e remover o tempo utilizado
 gboolean execProcess(gpointer key, gpointer value, gpointer user_data) {
+    currentClock += cpuClock->clock_cpu;
+    //printf("CPU: %d\n",currentClock);
+
     ExecData *data = (ExecData *)user_data;
     GTree *tree = data->tree;
     ClockCPU *cpuClock = data->cpuClock;
@@ -108,10 +122,12 @@ gboolean execProcess(gpointer key, gpointer value, gpointer user_data) {
     Process *process = value;
     printf("\n Processo %d entrou na CPU \n", process->id);
     
+    process->latency = process->latency + currentClock;
     int restTime = process->clock - cpuClock->clock_cpu;
     printf("Tempo anterior: %d, Tempo restante: %d\n", process->clock, restTime);
 
     process->clock = restTime;
+
     int *new_key = malloc(sizeof(int));
     *new_key = process->clock;
 
@@ -149,6 +165,7 @@ void* executar_processos_CFS(void* arg) {
 
         if (g_tree_nnodes(tree) == 0) {
             printf("CPU vazia.\n");
+            currentClock = 0;
         }
         sleep(1);
     }
@@ -158,6 +175,11 @@ void* executar_processos_CFS(void* arg) {
 
 
 void escalonadorCFS() {
+    FILE *out = fopen("SaidaCFS.txt", "w");
+    fprintf(out,"ID | LATÊNCIA\n");
+    fclose(out);
+
+
     pthread_mutex_init(&lockCFS, NULL);
 
     const char *filename = "entradaEscalonador1.txt";
