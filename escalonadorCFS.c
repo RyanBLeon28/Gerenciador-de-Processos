@@ -101,7 +101,7 @@ void* adicionar_processo_CFS(void* arg) {
         printf("Novo processo adicionado: %s\n", process->name);
         printf("Id: %d \n", process->id);
         printf("Clock: %d \n", process->clock);
-        printf("Bilhetes: %d \n\n", process->priority);
+        printf("Prioridade: %d \n\n", process->priority);
 
         pthread_mutex_unlock(&lockCFS);
     }
