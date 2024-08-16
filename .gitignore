@@ -1,5 +1,8 @@
 #Ignorar arquivos txt
 *.txt
 
+#Ignorar pasta vscode
+vscode/
+
 #Ignorar o arquivo out
 *.out

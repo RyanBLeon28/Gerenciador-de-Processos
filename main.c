@@ -5,7 +5,7 @@
 #include "escalonadorCFS.h"
 #include "escalonadorLoteria.h"
 // #include "escalonadorPrioridade.h"
-// #include "escalonadorAlternanciaCircular.h"
+#include "escalonadorAlternanciaCircular.h"
 
 #define TRUE 1
 
@@ -36,9 +36,9 @@ int main() {
     else if (strcmp(alg, "loteria") == 0) {
         escalonadorLoteria();
     } 
-    // else if (strcmp(alg, "escalonadorAlternanciaCircular") == 0) {
-    //     escalonadorAlternanciaCircular(filename);
-    // } 
+    else if (strcmp(alg, "alternanciaCircular") == 0) {
+        escalonadorAC();
+    } 
     // else if (strcmp(alg, "escalonadorPrioridade") == 0) {
     //     escalonadorPrioridade(filename);
     // } 
