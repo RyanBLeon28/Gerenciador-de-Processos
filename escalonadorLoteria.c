@@ -50,8 +50,8 @@ void* adicionar_processo(void* arg) {
         fgets(linha, sizeof(linha), stdin);
 
         pthread_mutex_lock(&lock);
-        int result = sscanf(linha, "processo-%[^|]|%d|%d|%d", nome, &id, &clock, &bilhetes);
-        if (result == 4) { 
+        int resultado = sscanf(linha, "processo-%[^|]|%d|%d|%d", nome, &id, &clock, &bilhetes);
+        if (resultado == 4) { 
             num_processos++;
             lista_processos = realloc(lista_processos, num_processos * sizeof(processo));
             
