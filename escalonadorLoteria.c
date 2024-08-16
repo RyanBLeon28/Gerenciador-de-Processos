@@ -106,6 +106,7 @@ void* executar_processos(void* arg) {
                         sum_clocks -= clock_cpu;
                         tempo += clock_cpu;
                         printf("Resta %d de clock no processo %d \n", lista_processos[i].clock, lista_processos[i].id);
+                        printf("O processo %d saiu da CPU \n", lista_processos[i].id);
                         if(lista_processos[i].clock <= 0){ //Verifica se acabou o tempo de execução do processo
                             lista_processos[i].tempo_exec = tempo - lista_processos[i].tempo_exec;
                             num_bilhetes -= lista_processos[i].bilhetes;

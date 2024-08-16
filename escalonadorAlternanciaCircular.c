@@ -17,6 +17,7 @@ pthread_mutex_t lockAC;
 
 int numberP = 0; // número de processos
 int counter = 0;
+int sum_clocksAC = 0;
 
 int handleNumberProcesses(const char *input){
     int counter = 0;
@@ -62,23 +63,23 @@ void *handleAddProcess(void* arg){
     char intString[12];
 
     while (1){
-        printf("Caso queira adicionar um novo processo digite nesse formato: nome|id|clock|bilhetes \n\n");
+        printf("\nCaso queira adicionar um novo processo digite nesse formato: nome|id|clock|prioridade \n\n");
         fgets(line, sizeof(line), stdin);
         pthread_mutex_lock(&lockAC);
         numberP++;
         counter++;
         cpu = realloc(cpu, numberP * sizeof(process));
 
-        int result = sscanf(line, "processo-%[^|]|%d|%d|%d", name, &id, &time, &ticket);
+        int result = sscanf(line, "%[^|]|%d|%d|%d", name, &id, &time, &ticket);
         if (result == 4) {
-        strcpy(cpu[counter-1].name, name);
-            cpu[counter-1].id = id;
-            cpu[counter-1].clock = time;
-            cpu[counter-1].ticket = ticket;
-            cpu[counter-1].latency = 0;
-        printf("\n");
-        printf("Novo processo adicionado: \n");
-        printf("Processo-%s|%d|%d|%d", 
+            strcpy(cpu[counter-1].name, name);
+                cpu[counter-1].id = id;
+                cpu[counter-1].clock = time;
+                cpu[counter-1].ticket = ticket;
+                cpu[counter-1].latency = 0;
+                sum_clocksAC += cpu[counter-1].clock;
+        printf("\nNovo processo adicionado: \n");
+        printf("%s|%d|%d|%d \n", 
             cpu[counter-1].name, 
             cpu[counter-1].id, 
             cpu[counter-1].clock, 
@@ -100,7 +101,6 @@ void *handleAddProcess(void* arg){
 void* handleExecute(void* arg) {
     int *cpu_clock_ptr = (int *)arg;
     int clock = *cpu_clock_ptr;
-    int all_zero = 0; 
     int latency = 0;
     char line[100];
 
@@ -111,50 +111,47 @@ void* handleExecute(void* arg) {
         perror("Erro ao criar o arquivo");
     }
 
-    sleep(2);
-    while (!all_zero) {
-        
-        /* all_zero = 1;  */
-        pthread_mutex_lock(&lockAC);
-        for(int i = 0; i < counter; i++) {
-            if (cpu[i].clock > 0) {
-                printf("O processo %d está na CPU \n", cpu[i].id);
-                if (cpu[i].clock < clock) {
-                    latency += cpu[i].clock;
-                    cpu[i].latency = latency;
-                    cpu[i].clock -= cpu[i].clock;  
-                } else {
-                    cpu[i].clock -= clock;  
+    while (1) {
+        if(sum_clocksAC > 0 ){
+
+            pthread_mutex_lock(&lockAC);
+            for(int i = 0; i < numberP; i++) {
+                if (cpu[i].clock > 0) {
+                    printf("\nO processo %d está na CPU \n", cpu[i].id);
+
+                    cpu[i].clock -= clock;
+                    sum_clocksAC -= clock;
                     latency += clock;
                     cpu[i].latency = latency;
+                    if (cpu[i].clock == 0){
+                        printf("Processo %d finalizado\n", cpu[i].id);
+                    }
+                    printf("Resta %d de clock no processo %d \n", cpu[i].id, cpu[i].clock);
+                    printf("O processo %d saiu da CPU \n", cpu[i].id);
+                    sleep(1);
                 }
-                /* all_zero = 0;  */
-                printf("id:%d|%d\n", cpu[i].id, cpu[i].clock);
-                printf("O processo %d saiu da CPU \n", cpu[i].id);
-            } /* else {
-                
-                if (cpu[i].id == -1) {
-                    break;
-                }
-                
-            } */
-            printf("Processo %d finalizado", cpu[i].id);
-            printf("\n");
-            sleep(1); 
+            }
+            pthread_mutex_unlock(&lockAC);
+            sleep(1);
+        }
+        else {   
+            if (cpu[numberP-1].id == -1) {
+                printf("\nPrograma encerrado \n");
+                break;
+            }
             printf("\nCaso queira adicionar um novo processo digite nesse formato: nome|id|clock|Prioridade \n");
             printf("Caso queira encerrar digite (s) \n");
-            sleep(2);
-            printf("\n");
+            sleep(3); 
         } 
+    } 
            
-        printf("\n");
-        pthread_mutex_unlock(&lockAC);
-    }
     
     fprintf(out, "id|latência\n");
     
     for(int j = 0; j < counter; j++) {
-        fprintf(out, "%d|%d\n", cpu[j].id, cpu[j].latency);
+        if(cpu[j].id != -1){
+            fprintf(out, "%d|%d\n", cpu[j].id, cpu[j].latency);
+        }
     }
     fclose(out);
     return NULL;
@@ -192,14 +189,14 @@ void escalonadorAC() {
             cpu[counter].clock = time;
             cpu[counter].ticket = ticket;
             cpu[counter].latency = 0;
-            printf("Processo-%s|%d|%d|%d\n", 
-               cpu[counter].name, 
-               cpu[counter].id, 
-               cpu[counter].clock, 
-               cpu[counter].ticket);
+            sum_clocksAC += time;
+            // printf("Processo-%s|%d|%d|%d\n", 
+            //    cpu[counter].name, 
+            //    cpu[counter].id, 
+            //    cpu[counter].clock, 
+            //    cpu[counter].ticket);
             counter++;
         }
-        sleep(1);
     } 
 
     pthread_create(&thread_add, NULL, &handleAddProcess, NULL);

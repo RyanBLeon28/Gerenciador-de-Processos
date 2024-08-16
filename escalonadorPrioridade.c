@@ -5,6 +5,7 @@
 #include <stdbool.h>
 #include <unistd.h>
 
+//Dados dos processos
 typedef struct{
     char nome_processo[50];
     int id,
@@ -13,11 +14,12 @@ typedef struct{
         latencia;
 }DadosProcessos;
 
-pthread_mutex_t mutex_prioridade;
-DadosProcessos *lista_processosPR = NULL;
-int iterador;
-bool chave = true;
+pthread_mutex_t mutex_prioridade; //Criando um mutex
+DadosProcessos *lista_processosPR = NULL; //Criando a lista onde os processos vão ser armazenados.
+int iterador; //Iterador para contar o número de processos.
 
+
+//Função utilizada para contar os processos. Retorna o número de linhas (a partir da segunda) do arquivo txt. 
 int conta_processos(){   
     char linha[50];
     FILE *arquivo_1 = fopen("entradaEscalonador1.txt", "r");
@@ -38,6 +40,8 @@ int conta_processos(){
     
 }  
 
+
+//Função para criar um arquivo txt onde estarão armazenados o Id e a Latência de cada processo.
 void criando_arquivo(){
     int i = 0;
     FILE* arquivo_3 = fopen("SaidaPrioridade.txt", "w");
@@ -52,15 +56,16 @@ void criando_arquivo(){
     }
 }
 
+//Função que recebe novos processos e armazena numa lista. Durante o procedimento de adicionar um novo processo ele "trava" a função executando_processos usando um mutex.
 void *recebe_novos_processos(void* arg){
 
     char resposta, linha[50];
     int teste = 0;
     
     iterador = *(int*)arg;
+    printf("Caso deseja inserir um novo processo siga o padrão: nome do processo|Id|Tempo de execução|Prioridade\n");
 
-    int chaveRyan = 1;
-    while (chaveRyan){
+    while (true){
         fgets(linha, sizeof(linha), stdin);
 
         pthread_mutex_lock(&mutex_prioridade);  
@@ -68,10 +73,10 @@ void *recebe_novos_processos(void* arg){
         iterador++;
 
         lista_processosPR = realloc(lista_processosPR, iterador * sizeof(DadosProcessos));
-    
+        
         char nome[50];
         int id , tempo, prioridade;
-        int result = sscanf(linha, "processo-%[^|]|%d|%d|%d", nome, &id, &tempo, &prioridade); 
+        int result = sscanf(linha, "%[^|]|%d|%d|%d", nome, &id, &tempo, &prioridade); 
         
         if (result == 4) { 
             strcpy(lista_processosPR[iterador - 1].nome_processo, nome);
@@ -79,8 +84,14 @@ void *recebe_novos_processos(void* arg){
             lista_processosPR[iterador - 1].tempo_execucao = tempo;
             lista_processosPR[iterador - 1].prioridade = prioridade;
             lista_processosPR[iterador - 1].latencia = 0;
+
+            printf("Novo processo adicionado: %s\n", lista_processosPR[iterador - 1].nome_processo);
+            printf("Id: %d \n", lista_processosPR[iterador - 1].id);
+            printf("Clock: %d \n", lista_processosPR[iterador - 1].tempo_execucao);
+            printf("Prioridade: %d \n\n", lista_processosPR[iterador - 1].prioridade);
         
-        } else {
+        }
+        else {
             int result = sscanf(linha, "%s", nome);
 
             if(result == 1 && strcmp(nome, "s") == 0){
@@ -94,12 +105,12 @@ void *recebe_novos_processos(void* arg){
     }
 }
         
-
+//Função que recebe a lista de processos e executa-os. Durante o procedimento de executar um novo processo ele "trava" a função recebe_novos_processos usando um mutex.
 void *executando_processos(void* arg){
     
     int latencia = 0, id_processo_anterior;
 
-    while(chave){
+    while(true){
         int maior_prioridade = 0, j = 0, k = 0, posicao = 0,  clock = *(int*)arg;;
         while(j < iterador){
             if (maior_prioridade < lista_processosPR[j].prioridade && lista_processosPR[j].tempo_execucao > 0){
@@ -132,7 +143,10 @@ void *executando_processos(void* arg){
                 lista_processosPR[posicao].prioridade = 0;          
             }
 
-            printf("Nome do processo:%s\nTempo de execução do processo:%d\nLatência do processo:%d\n", lista_processosPR[posicao].nome_processo, lista_processosPR[posicao].tempo_execucao, lista_processosPR[posicao].latencia);
+            printf("Id do processo:%d\nTempo de execucao do processo:%d\nLatencia do processo:%d\n", 
+            lista_processosPR[posicao].id, 
+            lista_processosPR[posicao].tempo_execucao, 
+            lista_processosPR[posicao].latencia);
 
             pthread_mutex_unlock(&mutex_prioridade); 
             
@@ -151,6 +165,7 @@ void *executando_processos(void* arg){
     }
 }
 
+//Fução main que rebece que inicia as threads, mutex, recebe os valores do arquivo txt. No final libera memória da lista, encerra as threads e destroi o mutex.
 void escalonadorPrioridade(){
     char linha[50];
     int controlador = 0, numero_processos = 0, i = 0;

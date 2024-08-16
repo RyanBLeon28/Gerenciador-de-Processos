@@ -157,7 +157,8 @@ gboolean execProcess(gpointer key, gpointer value, gpointer user_data) {
     
     if (process->id != -1){
         printf("\n Processo %d entrou na CPU\n", process->id);
-        printf("Tempo anterior: %d, Tempo restante: %d\n", process->clock, restTime);
+        printf("Resta %d de clock no processo %d \n", restTime, process->id);
+        printf("Processo  %d saiu da CPU\n", process->id);
 
         process->clock = restTime;
 
@@ -166,16 +167,17 @@ gboolean execProcess(gpointer key, gpointer value, gpointer user_data) {
     }
 
     else{
-        // printf("AQUI é id -1\n");
-       *stop_iteration_thread = TRUE; // Solicita a parada da iteração
-        return TRUE; // Interrompe a iteração atual
+        // ENCERRA O PROGRAMA
+        *stop_iteration_thread = TRUE; 
+        return TRUE; 
+        printf("\nPrograma encerrado \n");
     }
 
     if (process->clock <= 0) {
         // Fim do processo, então é removido da árvore
         data->processes_to_remove = g_list_prepend(data->processes_to_remove, key);
-        *stop_iteration = TRUE; // Solicita a parada da iteração
-        return TRUE; // Interrompe a iteração atual
+        *stop_iteration = TRUE;
+        return TRUE; 
     } 
     else {
     
@@ -192,8 +194,6 @@ gboolean execProcess(gpointer key, gpointer value, gpointer user_data) {
 }
 
 void* executar_processos_CFS(void* arg) {
-    printf("\n----------Inicio do escalonamento CFS----------\n");
-
     while (TRUE) {
         gboolean stop_iteration = FALSE;
         gboolean stop_iteration_thread = FALSE;
