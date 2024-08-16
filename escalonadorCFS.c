@@ -34,18 +34,28 @@ typedef struct {
     ClockCPU *cpuClock;  // Atualizado para o novo nome
     GList *processes_to_remove;
     gboolean *stop_iteration;
+    gboolean *stop_iteration_thread;
 } ExecData;
 
 // Função de comparação usada pelo GTree
-gint compare_ints(gconstpointer a, gconstpointer b) {
-    return (*(const int *)a - *(const int *)b);
+gint compare_processes(gconstpointer a, gconstpointer b) {
+    const Process *procA = (const Process *)a;
+    const Process *procB = (const Process *)b;
+
+    // Primeiro, compara os clocks
+    if (procA->clock != procB->clock) {
+        return procA->clock - procB->clock;
+    }
+
+    // Se os clocks forem iguais, compara os IDs
+    return procA->id - procB->id;
 }
 
 // Função para imprimir chave/valor
 gboolean print_key_value(gpointer key, gpointer value, gpointer user_data) {
     Process *process = value;
-    printf("Clock: %d, ID: %d, Nome: %s, Clock: %d, Prioridade: %d\n",
-           *(int *)key, process->id, process->name, process->clock, process->priority);
+    printf("ID: %d, Nome: %s, Clock: %d, Prioridade: %d\n",
+           process->id, process->name, process->clock, process->priority);
     return FALSE;
 }
 
@@ -58,8 +68,8 @@ void removeProcess(ExecData *data) {
         Process *process = g_tree_lookup(data->tree, key); // Buscar o processo correspondente
 
         int newLatency = process->latency - process->currentLatency;
+        //printf("\nLat final: %d - %d \n", process->latency, process->currentLatency);
         process->latency = newLatency;
-        printf("\nLat final: %d - %d \n", process->latency, process->currentLatency);
 
         //escreve o valor da latencia antes de excluir o processo
         fprintf(fp,"%d | ", process->id);
@@ -68,9 +78,10 @@ void removeProcess(ExecData *data) {
         if (process != NULL) {
             g_tree_remove(data->tree, key);
             printf("\nProcesso ID: %d encerrou\n", process->id);
+            printf("Latência do Processo: %d  \n", process->latency);
+
             free(process); // Liberar o processo
         }
-        free(key); // Liberar a chave alocada
         iter = iter->next; // Avançar para o próximo item da lista
     }
     g_list_free(data->processes_to_remove);
@@ -80,28 +91,46 @@ void removeProcess(ExecData *data) {
 
 void* adicionar_processo_CFS(void* arg) {
     char linha[100];
-    while (1) {
-        printf("Digite um novo processo (name|id|clock|bilhetes): \n");
-        fgets(linha, sizeof(linha), stdin);
 
-        pthread_mutex_lock(&lockCFS);
+    char nome[50];
+    int id , tempo, prioridade;
         
+
+    while (1) {
+        fgets(linha, sizeof(linha), stdin);
+        
+        pthread_mutex_lock(&lockCFS);
+
+        int result = sscanf(linha, "processo-%[^|]|%d|%d|%d", nome, &id, &tempo, &prioridade); 
+
         Process *process = malloc(sizeof(Process));
-        strcpy(process->name, strtok(linha, "|"));
-        process->id = atoi(strtok(NULL, "|"));
-        process->clock = atoi(strtok(NULL, "|"));
-        process->priority = atoi(strtok(NULL, "\n"));
-        process->currentLatency = currentClock;
+        if (result == 4) { 
+            strcpy(process->name, nome);
+            process->id = id;
+            process->clock = tempo;
+            process->priority = prioridade;
+            process->currentLatency = currentClock;
+
+        } else {
+            int result = sscanf(linha, "%s", nome);
+
+            if(result == 1 && (strcmp(nome, "s") == 0 || strcmp(nome, "S") == 0)){
+                process->id = -1;
+            }
+        }
         
         int *clock_copy = malloc(sizeof(int));
-        *clock_copy = process->clock;
+        *clock_copy = process->id;
+        
+        g_tree_insert(tree, process, process);
 
-        g_tree_insert(tree, clock_copy, process);
-
-        printf("Novo processo adicionado: %s\n", process->name);
-        printf("Id: %d \n", process->id);
-        printf("Clock: %d \n", process->clock);
-        printf("Prioridade: %d \n\n", process->priority);
+        
+        if (process->id != -1){
+            printf("\nNovo processo adicionado: %s\n", process->name);
+            printf("Id: %d \n", process->id);
+            printf("Clock: %d \n", process->clock);
+            printf("Prioridade: %d \n\n", process->priority);
+        }
 
         pthread_mutex_unlock(&lockCFS);
     }
@@ -112,35 +141,51 @@ void* adicionar_processo_CFS(void* arg) {
 // Funcao para executar o processo dentro da CPU e remover o tempo utilizado
 gboolean execProcess(gpointer key, gpointer value, gpointer user_data) {
     currentClock += cpuClock->clock_cpu;
-    //printf("CPU: %d\n",currentClock);
+    // printf("\n Clock: %d \n", currentClock);
 
     ExecData *data = (ExecData *)user_data;
     GTree *tree = data->tree;
     ClockCPU *cpuClock = data->cpuClock;
     gboolean *stop_iteration = data->stop_iteration;
+    gboolean *stop_iteration_thread = data->stop_iteration_thread;
+
 
     Process *process = value;
-    printf("\n Processo %d entrou na CPU \n", process->id);
     
-    process->latency = process->latency + currentClock;
+    process->latency = currentClock;
     int restTime = process->clock - cpuClock->clock_cpu;
-    printf("Tempo anterior: %d, Tempo restante: %d\n", process->clock, restTime);
+    
+    if (process->id != -1){
+        printf("\n Processo %d entrou na CPU\n", process->id);
+        printf("Tempo anterior: %d, Tempo restante: %d\n", process->clock, restTime);
 
-    process->clock = restTime;
+        process->clock = restTime;
 
-    int *new_key = malloc(sizeof(int));
-    *new_key = process->clock;
+        int *new_key = malloc(sizeof(int));
+        *new_key = process->clock;
+    }
+
+    else{
+        // printf("AQUI é id -1\n");
+       *stop_iteration_thread = TRUE; // Solicita a parada da iteração
+        return TRUE; // Interrompe a iteração atual
+    }
 
     if (process->clock <= 0) {
         // Fim do processo, então é removido da árvore
         data->processes_to_remove = g_list_prepend(data->processes_to_remove, key);
         *stop_iteration = TRUE; // Solicita a parada da iteração
         return TRUE; // Interrompe a iteração atual
-    } else {
+    } 
+    else {
+    
         // Atualiza a chave removendo a antiga e colocando uma nova no mesmo lugar
         g_tree_remove(tree, key);
-        free(key); // Liberar a chave antiga
-        g_tree_insert(tree, new_key, process);
+        int *new_key = malloc(sizeof(int));
+        *new_key = process->id;  // Atualize com o novo valor de clock
+
+        g_tree_insert(tree, process, process);
+
     }
     sleep(1);
     return FALSE;
@@ -151,12 +196,16 @@ void* executar_processos_CFS(void* arg) {
 
     while (TRUE) {
         gboolean stop_iteration = FALSE;
+        gboolean stop_iteration_thread = FALSE;
         ExecData data = {tree, cpuClock, NULL, &stop_iteration};  // Atualizado
 
         pthread_mutex_lock(&lockCFS);
         g_tree_foreach(tree, execProcess, &data);
         pthread_mutex_unlock(&lockCFS);
 
+        if (stop_iteration_thread){
+            break;
+        }
         removeProcess(&data);
 
         if (stop_iteration) {
@@ -164,7 +213,9 @@ void* executar_processos_CFS(void* arg) {
         }
 
         if (g_tree_nnodes(tree) == 0) {
-            printf("CPU vazia.\n");
+            printf("\nTodos os processos foram executados. Deseja encerrar? S \n");
+            sleep(3);
+        
             currentClock = 0;
         }
         sleep(1);
@@ -186,7 +237,8 @@ void escalonadorCFS() {
     char *alg;
     int clock_cpu;
     char linha[100];
-    tree = g_tree_new(compare_ints); 
+        
+    tree = g_tree_new(compare_processes);
 
     FILE *fp = fopen(filename, "r");
     if (fp == NULL) {
@@ -212,10 +264,10 @@ void escalonadorCFS() {
         proc->clock = atoi(strtok(NULL, "|"));
         proc->priority = atoi(strtok(NULL, "\n"));
 
-        int *clock_copy = malloc(sizeof(int));
-        *clock_copy = proc->clock;
+        int *idCopy = malloc(sizeof(int));
+        *idCopy = proc->id;
 
-        g_tree_insert(tree, clock_copy, proc);
+        g_tree_insert(tree, proc, proc);
     }
 
     // Percorrendo e imprimindo a árvore após toda a inserção lida do arquivo txt
@@ -227,8 +279,6 @@ void escalonadorCFS() {
     pthread_create(&thread_add, NULL, adicionar_processo_CFS, NULL);
     // Criando a thread que executa os processos
     pthread_create(&thread_exec, NULL, executar_processos_CFS, &clock_cpu);
-
-    // Criando a thread que permite adicionar novos processos
 
     // Aguardando a thread de execução dos processos terminar
     pthread_join(thread_exec, NULL);
