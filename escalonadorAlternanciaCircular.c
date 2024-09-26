@@ -9,6 +9,9 @@ typedef struct st_process{
     int id;
     int clock;
     int ticket;
+    int memoryAmount;
+    int *pageSequence;  
+    int pageAmount;
     int latency;
 }process;
 
@@ -35,20 +38,6 @@ int handleNumberProcesses(const char *input){
     fclose(file);
     counter -= 1;
     return counter;
-}
-
-void handleRemoveElement(int list[], int size, int index) {
-    if (index < 0 || index >= size) {
-        printf("Índice fora dos limites.\n");
-        return;
-    }
-
-    for (int i = index; i < size - 1; i++) {
-        list[i] = list[i + 1];
-    }
-    
-    size--;
-    list[size] = 0;
 }
 
 void *handleAddProcess(void* arg){
@@ -133,8 +122,7 @@ void* handleExecute(void* arg) {
             }
             pthread_mutex_unlock(&lockAC);
             sleep(1);
-        }
-        else {   
+        } else {   
             if (cpu[numberP-1].id == -1) {
                 printf("\nPrograma encerrado \n");
                 break;
@@ -157,14 +145,37 @@ void* handleExecute(void* arg) {
     return NULL;
 }
 
+void read_numbers(char *str, process *p) {
+
+    char *temp = strdup(str);
+    char *token = strtok(temp, " ");
+    p -> pageAmount = 0;
+    
+    while (token != NULL) {
+        p -> pageAmount++;
+        token = strtok(NULL, " ");
+    }
+    free(temp);
+
+    p -> pageSequence = (int *)malloc(p -> pageAmount * sizeof(int));
+
+    token = strtok(str, " ");
+    int i = 0;
+    while (token != NULL) {
+        p -> pageSequence[i++] = atoi(token);
+        token = strtok(NULL, " ");
+    }
+}
 
 void escalonadorAC() {
     pthread_t thread_exec, thread_add;
     const char *input = "entradaEscalonador1.txt";
-    int clock;
+    int clock, memorySize, pageSize, allocation, access;
+    char method[50];
     char line[100];
     char name[50];
-    int id, time, ticket;
+    int id, time, ticket, amount;
+    char numbersSequence[500];
 
     pthread_mutex_init(&lockAC, NULL);
 
@@ -176,37 +187,59 @@ void escalonadorAC() {
     }
 
     numberP = handleNumberProcesses(input);
-    fscanf(file, "%*[^|]|%d", &clock);
+    fscanf(file, "%*[^|]|%d|%[^|]|%d|%d|%d|%d", &clock, method, &memorySize, &pageSize, &allocation, &access);
 
     cpu = malloc(numberP * sizeof(process));
     
     while (fgets(line, sizeof(line), file) != NULL) {
-        int result = sscanf(line, "processo-%[^|]|%d|%d|%d", name, &id, &time, &ticket);
-        if (result == 4) { 
+        int result = sscanf(line, "processo-%[^|]|%d|%d|%d|%d|%[^\n]", name, &id, &time, &ticket, &amount, numbersSequence);
+        if (result == 6) { 
             
             strcpy(cpu[counter].name, name);
             cpu[counter].id = id;
             cpu[counter].clock = time;
             cpu[counter].ticket = ticket;
+            cpu[counter].memoryAmount = amount;
             cpu[counter].latency = 0;
             sum_clocksAC += time;
-            // printf("Processo-%s|%d|%d|%d\n", 
-            //    cpu[counter].name, 
-            //    cpu[counter].id, 
-            //    cpu[counter].clock, 
-            //    cpu[counter].ticket);
+
+            read_numbers(numbersSequence, &cpu[counter]);
+
             counter++;
         }
+        
     } 
 
-    pthread_create(&thread_add, NULL, &handleAddProcess, NULL);
-    pthread_create(&thread_exec, NULL, &handleExecute, &clock);
+    for (int i = 0; i < counter; i++) {
+        printf("Processo: %s\n", cpu[i].name);
+        printf("ID: %d\n", cpu[i].id);
+        printf("Clock: %d\n", cpu[i].clock);
+        printf("Ticket: %d\n", cpu[i].ticket);
+        printf("Memoria: %d\n", cpu[i].memoryAmount);
+        
+        printf("Numeros: ");
+        for (int j = 0; j < cpu[i].pageAmount; j++) {
+            printf("%d ", cpu[i].pageSequence[j]);
+        }
+        printf("\n");
 
-    pthread_join(thread_exec, NULL);
+    }
 
-    pthread_cancel(thread_add);
+
+    // pthread_create(&thread_add, NULL, &handleAddProcess, NULL);
+    // pthread_create(&thread_exec, NULL, &handleExecute, &clock);
+
+    // pthread_join(thread_exec, NULL);
+
+    // pthread_cancel(thread_add);
 
     free(cpu);
     pthread_mutex_destroy(&lockAC);
     fclose(file);
 }
+
+// printf("Processo-%s|%d|%d|%d\n", 
+            //    cpu[counter].name, 
+            //    cpu[counter].id, 
+            //    cpu[counter].clock, 
+            //    cpu[counter].ticket);
