@@ -10,17 +10,23 @@ typedef struct st_process{
     int clock;
     int ticket;
     int memoryAmount;
+    int capacity;
     int *pageSequence;  
     int pageAmount;
     int latency;
 }process;
 
 process *cpu = NULL;
+int *memory;
 pthread_mutex_t lockAC;
 
 int numberP = 0; // número de processos
 int counter = 0;
 int sum_clocksAC = 0;
+int memorySize = 0; // tamanho da memória
+int memory_count = 0;
+char method[50]; // política
+
 
 int handleNumberProcesses(const char *input){
     int counter = 0;
@@ -44,7 +50,6 @@ void *handleAddProcess(void* arg){
 
     printf("\n");
     
-
     char line[100];
     char key[20];
     char name[50];
@@ -115,7 +120,7 @@ void* handleExecute(void* arg) {
                     if (cpu[i].clock == 0){
                         printf("Processo %d finalizado\n", cpu[i].id);
                     }
-                    printf("Resta %d de clock no processo %d \n", cpu[i].id, cpu[i].clock);
+                    printf("Resta %d de clock no processo %d \n", cpu[i].clock, cpu[i].id);
                     printf("O processo %d saiu da CPU \n", cpu[i].id);
                     sleep(1);
                 }
@@ -145,7 +150,11 @@ void* handleExecute(void* arg) {
     return NULL;
 }
 
-void read_numbers(char *str, process *p) {
+int handle(){
+    return 8;
+}
+
+void read_numbers(process *p, char *str) {
 
     char *temp = strdup(str);
     char *token = strtok(temp, " ");
@@ -167,19 +176,99 @@ void read_numbers(char *str, process *p) {
     }
 }
 
+void remove_page(process *p) {
+    if (p->pageAmount == 0) {
+        printf("Não há páginas para remover.\n");
+        return;
+    }
+
+    for (int i = 0; i < p->pageAmount - 1; i++) {
+        p->pageSequence[i] = p->pageSequence[i + 1];
+    }
+
+    p->pageAmount--;
+
+    p->pageSequence = (int *)realloc(p->pageSequence, p->pageAmount * sizeof(int));
+}
+
+int isPageInMemory(int page) {
+    for (int i = 0; i < memory_count; i++) {
+        if (memory[i] == page) {
+            return 1;  
+        }
+    }
+    return 0;
+}
+
+int findGreatReplacement(int pages[], int page_index, int total_pages) {
+    int replace_index = -1; 
+    int farthest = page_index;
+
+    for (int i = 0; i < memory_count; i++) {
+        int j;
+        for (j = page_index; j < total_pages; j++) {
+            if (memory[i] == pages[j]) {
+                if (j > farthest) {
+                    farthest = j;  
+                    replace_index = i;
+                }
+                break;
+            }
+        }
+        if (j == total_pages) {
+            return i;
+        }
+    }
+
+    return (replace_index == -1) ? 0 : replace_index;
+}
+
+int insertPageInMemory(int page, int index) {
+    // for (int i = 0; i < memory_count; i++) {
+    //     if (memory[i] == page) {
+    //         return 1;  
+    //     }
+    // }
+    // return 0;
+
+    // if (strcmp(method, "local") == 0) {
+    //     printf("Metodo local.\n");
+    // } else {
+    //     printf("Metodo global.\n");
+    // } 
+
+    if (!isPageInMemory(page)) {
+        if (memory_count < memorySize) {
+            memory[memory_count++] = page;  
+            
+        } else {
+            int replace_index = findGreatReplacement(cpu[index].pageSequence, index + 1, cpu[index].pageAmount);
+            memory[replace_index] = page;
+        }
+    }
+
+    printf("Acesso a pagina %d - ", page);
+    for (int k = 0; k < memory_count; k++) {
+        printf("%d ", memory[k]);
+    }
+    printf("\n");
+
+}
+
 void escalonadorAC() {
     pthread_t thread_exec, thread_add;
     const char *input = "entradaEscalonador1.txt";
-    int clock, memorySize, pageSize, allocation, access;
-    char method[50];
+    int clock, pageSize, allocation, access;
+    // apagar depois
+    int memory_Size;
+    //
     char line[100];
     char name[50];
     int id, time, ticket, amount;
     char numbersSequence[500];
 
     pthread_mutex_init(&lockAC, NULL);
-
-    
+  
     FILE *file = fopen(input, "r");
     if (file == NULL) {
         printf("Erro ao abrir o arquivo.\n");
@@ -187,9 +276,15 @@ void escalonadorAC() {
     }
 
     numberP = handleNumberProcesses(input);
-    fscanf(file, "%*[^|]|%d|%[^|]|%d|%d|%d|%d", &clock, method, &memorySize, &pageSize, &allocation, &access);
+    fscanf(file, "%*[^|]|%d|%[^|]|%d|%d|%d|%d", &clock, method, &memory_Size, &pageSize, &allocation, &access);
 
+    memorySize = 8;
     cpu = malloc(numberP * sizeof(process));
+    memory = malloc(memorySize * sizeof(int));
+
+    if (cpu == NULL || memory == NULL) {
+        printf("Erro na alocação de memória.\n");
+    }
     
     while (fgets(line, sizeof(line), file) != NULL) {
         int result = sscanf(line, "processo-%[^|]|%d|%d|%d|%d|%[^\n]", name, &id, &time, &ticket, &amount, numbersSequence);
@@ -200,30 +295,79 @@ void escalonadorAC() {
             cpu[counter].clock = time;
             cpu[counter].ticket = ticket;
             cpu[counter].memoryAmount = amount;
+            cpu[counter].capacity = ((amount / pageSize) * allocation / 100 );
             cpu[counter].latency = 0;
             sum_clocksAC += time;
 
-            read_numbers(numbersSequence, &cpu[counter]);
+            read_numbers(&cpu[counter], numbersSequence);
 
             counter++;
         }
         
-    } 
+    }
 
-    for (int i = 0; i < counter; i++) {
-        printf("Processo: %s\n", cpu[i].name);
-        printf("ID: %d\n", cpu[i].id);
-        printf("Clock: %d\n", cpu[i].clock);
-        printf("Ticket: %d\n", cpu[i].ticket);
-        printf("Memoria: %d\n", cpu[i].memoryAmount);
-        
-        printf("Numeros: ");
-        for (int j = 0; j < cpu[i].pageAmount; j++) {
-            printf("%d ", cpu[i].pageSequence[j]);
+    // Excluir depois
+    int all_zero = 0; 
+    int latency = 0;
+    // 
+
+    for (int i = 0; i < memorySize; i++) {
+        memory[i] = -1;
+    }
+
+    while (!all_zero) {
+        all_zero = 1; 
+
+        for(int i = 0; i < counter; i++) {
+            if (cpu[i].clock > 0) {
+                printf("Processo - %d\n", cpu[i].id);
+                if (cpu[i].clock < clock) {
+                    
+                    for (int j = 0; j < cpu[i].clock; j++) {
+                        for (int k = 0; k < access; k++) {
+                            insertPageInMemory(cpu[i].pageSequence[0], i);
+                            // printf("pg: %d\n", cpu[i].pageSequence[0]);
+                            remove_page(&cpu[i]);
+                        }
+                    }
+                    latency += cpu[i].clock;
+                    cpu[i].latency = latency;
+                    cpu[i].clock -= cpu[i].clock;  
+                } else {
+                    for (int j = 0; j < clock; j++) {
+                        for (int k = 0; k < access; k++) {
+                            insertPageInMemory(cpu[i].pageSequence[0], i);
+                            // printf("pg: %d\n", cpu[i].pageSequence[0]);
+                            remove_page(&cpu[i]);
+                        }
+                    }
+                    cpu[i].clock -= clock;  
+                    latency += clock;
+                    cpu[i].latency = latency;
+                }
+                // printf("id:%d|%d\n", cpu[i].id, cpu[i].clock);
+                all_zero = 0;
+            }
         }
         printf("\n");
-
     }
+
+
+    // for (int i = 0; i < counter; i++) {
+    //     printf("Processo: %s\n", cpu[i].name);
+    //     printf("ID: %d\n", cpu[i].id);
+    //     printf("Clock: %d\n", cpu[i].clock);
+    //     printf("Ticket: %d\n", cpu[i].ticket);
+    //     printf("Memoria: %d\n", cpu[i].memoryAmount);
+    //      printf("Capacidade: %d\n", cpu[i].capacity);
+        
+    //     printf("Numeros: ");
+    //     for (int j = 0; j < cpu[i].pageAmount; j++) {
+    //         printf("%d ", cpu[i].pageSequence[j]);
+    //     }
+    //     printf("\n");
+
+    // }
 
 
     // pthread_create(&thread_add, NULL, &handleAddProcess, NULL);
