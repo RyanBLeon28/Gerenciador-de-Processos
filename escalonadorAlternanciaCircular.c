@@ -197,7 +197,7 @@ void remove_page(process *p) {
     p->pageSequence = (int *)realloc(p->pageSequence, p->pageAmount * sizeof(int));
 }
 
-int isPageInMemory(int page, int id) {
+int isPageInMemory(int id, int page) {
     
     for (int i = 0; i < memory_count; i++) {
         if (memory[i].page == page && memory[i].processId == id) {
@@ -207,30 +207,32 @@ int isPageInMemory(int page, int id) {
     return 0;
 }
 
-int findGreatReplacement(int pages[], int page_index, int total_pages) {
+int findGreatReplacement(int process_id) {
     int replace_index = -1; 
-    int farthest = page_index;
+    int farthest = 1;
 
     for (int i = 0; i < memory_count; i++) {
-        int j;
-        for (j = page_index; j < total_pages; j++) {
-            if (memory[i].page == pages[j]) {
-                if (j > farthest) {
-                    farthest = j;  
-                    replace_index = i;
+        if (memory[i].processId == process_id) {
+            int j;
+            for (j = 1; j < cpu[process_id].pageAmount; j++) {
+                if (memory[i].page == cpu[process_id].pageSequence[j]) {
+                    if (j > farthest) {
+                        farthest = j;  
+                        replace_index = i;
+                    }
+                    break;
                 }
-                break;
             }
-        }
-        if (j == total_pages) {
-            return i;
+            if (j == cpu[process_id].pageAmount) {
+                return i;
+            }
         }
     }
 
     return (replace_index == -1) ? 0 : replace_index;
 }
 
-int insertPageInMemory(int process_id, int page, int page_id) {
+int insertPageInMemory(int process_id, int page) {
 
     // if (strcmp(method, "local") == 0) {
     //     printf("Metodo local.\n");
@@ -238,27 +240,23 @@ int insertPageInMemory(int process_id, int page, int page_id) {
     //     printf("Metodo global.\n");
     // } 
 
-    if (!isPageInMemory(page, process_id)) {
-        if (cpu[process_id].positionCounter <= cpu[process_id].capacity) {
-            // if (memory_count < memorySize) {
+    if (!isPageInMemory(process_id, page)) {
+        if (memory_count < memorySize && cpu[process_id].positionCounter < cpu[process_id].capacity) {
                 memory[memory_count].page = page;  
                 memory[memory_count].processId = process_id; 
                 memory_count++;
-            // }  
-            cpu[process_id].positionCounter++;
+                cpu[process_id].positionCounter++;
         } else {
-            printf("pagina %d nao pode ser adicionada.\n", page);
+            int replace_index = findGreatReplacement(process_id);
+            printf("pagina %d sera colocana na posicao %d.\n", page, replace_index);
+            memory[replace_index].page = page;
         }
-        // } else {
-        //     int replace_index = findGreatReplacement(cpu[index].pageSequence, index + 1, cpu[index].pageAmount);
-        //     memory[replace_index].page = page;
-        // }
     }
 
     printf("Acesso a pagina %d -", page);
+    printf("\n");
     for (int k = 0; k < memory_count; k++) {
-        printf("%d - p%d  ", memory[k].page, memory[k].processId);
-        
+        printf("%d - p%d  ", memory[k].page, memory[k].processId); 
     }
     printf("\n");
 
@@ -306,7 +304,7 @@ void escalonadorAC() {
             cpu[counter].memoryAmount = amount;
             cpu[counter].capacity = ((amount / pageSize) * allocation / 100 );
             cpu[counter].latency = 0;
-            cpu[counter].positionCounter = 1;
+            cpu[counter].positionCounter = 0;
             sum_clocksAC += time;
 
             read_numbers(&cpu[counter], numbersSequence);
@@ -331,7 +329,7 @@ void escalonadorAC() {
                     
                     for (int j = 0; j < cpu[i].clock; j++) {
                         for (int k = 0; k < access; k++) {
-                            insertPageInMemory(cpu[i].id, cpu[i].pageSequence[0], 1);
+                            insertPageInMemory(cpu[i].id, cpu[i].pageSequence[0]);
                             // printf("pg: %d\n", cpu[i].pageSequence[0]);
                             remove_page(&cpu[i]);
                         }
@@ -342,7 +340,7 @@ void escalonadorAC() {
                 } else {
                     for (int j = 0; j < clock; j++) {
                         for (int k = 0; k < access; k++) {
-                            insertPageInMemory(cpu[i].id, cpu[i].pageSequence[0], 1);
+                            insertPageInMemory(cpu[i].id, cpu[i].pageSequence[0]);
                             // printf("pg: %d\n", cpu[i].pageSequence[0]);
                             remove_page(&cpu[i]);
                         }
