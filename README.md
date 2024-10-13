@@ -6,9 +6,9 @@ Este projeto consiste na implementação de um escalonador preemptivo que realiz
 
 
 
-## 1. Alternância Circular
+## 1. Algoritmo Ótimo
+O algoritmos de substituição de páginas ótimo busca minimizar o número de faltas de página, substituindo a página que será acessada mais tarde no futuro em comparação com as outras páginas que já estão na memória. Ele faz isso com base no conhecimento dos acessos futuros, algo que, na prática, é impossível de se prever com precisão, o que torna esse algoritmo teórico.
 
-Este algoritmo seleciona processos de forma circular e equitativa. Cada processo recebe uma fatia de tempo (quantum) para ser executado. Se o processo não terminar dentro desse quantum, ele é colocado de volta no final da fila de pronto.
 
 
 ## 2. Prioridade
