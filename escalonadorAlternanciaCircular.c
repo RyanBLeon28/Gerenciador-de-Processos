@@ -207,7 +207,7 @@ int isPageInMemory(int id, int page) {
     return 0;
 }
 
-int findGreatReplacement(int process_id) {
+int findGreatReplacementLocal(int process_id) {
     int replace_index = -1; 
     int farthest = 1;
 
@@ -232,22 +232,56 @@ int findGreatReplacement(int process_id) {
     return (replace_index == -1) ? 0 : replace_index;
 }
 
+int findGreatReplacementGlobal(int process_id) {
+    int replace_index = -1; 
+    int farthest = 1;
+
+    for (int i = 0; i < memory_count; i++) {
+        int process_id = memory[i].processId; 
+        int j;
+
+        for (j = 1; j < cpu[process_id].pageAmount; j++) {
+            if (memory[i].page == cpu[process_id].pageSequence[j]) {
+                if (j > farthest) {
+                    farthest = j;  
+                    replace_index = i;
+                }
+                break;
+            }
+        }
+
+        if (j == cpu[process_id].pageAmount) {
+            return i;
+        }
+    }
+
+    return (replace_index == -1) ? 0 : replace_index;
+}
+
 int insertPageInMemory(int process_id, int page) {
 
-    // if (strcmp(method, "local") == 0) {
-    //     printf("Metodo local.\n");
-    // } else {
-    //     printf("Metodo global.\n");
-    // } 
-
     if (!isPageInMemory(process_id, page)) {
-        if (memory_count < memorySize && cpu[process_id].positionCounter < cpu[process_id].capacity) {
+        if (cpu[process_id].positionCounter < cpu[process_id].capacity) {
+            if (memory_count < memorySize) {
                 memory[memory_count].page = page;  
                 memory[memory_count].processId = process_id; 
                 memory_count++;
-                cpu[process_id].positionCounter++;
+            } else {
+                if (strcmp(method, "local") == 0) {
+                    printf("Metodo local.\n");
+                    int replace_index = findGreatReplacementLocal(process_id);
+                    printf("pagina %d sera colocana na posicao %d.\n", page, replace_index);
+                    memory[replace_index].page = page;
+                } else {
+                    printf("Metodo global.\n");
+                    int replace_index = findGreatReplacementGlobal(process_id);
+                    printf("pagina %d sera colocana na posicao %d.\n", page, replace_index);
+                    memory[replace_index].page = page;
+                } 
+            }
+            cpu[process_id].positionCounter++;
         } else {
-            int replace_index = findGreatReplacement(process_id);
+            int replace_index = findGreatReplacementLocal(process_id);
             printf("pagina %d sera colocana na posicao %d.\n", page, replace_index);
             memory[replace_index].page = page;
         }
@@ -263,6 +297,7 @@ int insertPageInMemory(int process_id, int page) {
 }
 
 void escalonadorAC() {
+
     pthread_t thread_exec, thread_add;
     const char *input = "entradaEscalonador1.txt";
     int clock, pageSize, allocation, access;

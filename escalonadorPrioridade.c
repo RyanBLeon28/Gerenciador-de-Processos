@@ -12,6 +12,12 @@ typedef struct{
         prioridade,
         tempo_execucao,
         latencia;
+
+    int memoryAmount;
+    int capacity;
+    int *pageSequence;  
+    int pageAmount;
+    int positionCounter;
 }DadosProcessos;
 
 pthread_mutex_t mutex_prioridade; //Criando um mutex
@@ -165,12 +171,37 @@ void *executando_processos(void* arg){
     }
 }
 
+void read_sequence(DadosProcessos *p, char *str) {
+
+    char *temp = strdup(str);
+    char *token = strtok(temp, " ");
+    p -> pageAmount = 0;
+    
+    while (token != NULL) {
+        p -> pageAmount++;
+        token = strtok(NULL, " ");
+    }
+    free(temp);
+
+    p -> pageSequence = (int *)malloc(p -> pageAmount * sizeof(int));
+
+    token = strtok(str, " ");
+    int i = 0;
+    while (token != NULL) {
+        p -> pageSequence[i++] = atoi(token);
+        token = strtok(NULL, " ");
+    }
+}
+
 //Fução main que rebece que inicia as threads, mutex, recebe os valores do arquivo txt. No final libera memória da lista, encerra as threads e destroi o mutex.
 void escalonadorPrioridade(){
     char linha[50];
     int controlador = 0, numero_processos = 0, i = 0;
-    int clock;
-
+    int clock, pageSize, allocation, access;
+    // apagar depois
+    int memory_Size;
+    //
+    char method[50];
     numero_processos = conta_processos();
     lista_processosPR = malloc(numero_processos * sizeof(DadosProcessos));
 
@@ -180,30 +211,57 @@ void escalonadorPrioridade(){
         if (controlador == 0){
             strtok(linha, "|");
             clock = atoi(strtok(NULL, "|"));
+            strcpy(method, strtok(NULL, "|"));
+            memory_Size = atoi(strtok(NULL, "|"));
+            pageSize = atoi(strtok(NULL, "|"));
+            allocation = atoi(strtok(NULL, "|"));
+            access = atoi(strtok(NULL, "|"));
             controlador++;
-        }
-        else{            
+        } else {            
             strcpy(lista_processosPR[i].nome_processo, strtok(linha, "|"));
             lista_processosPR[i].id = atoi(strtok(NULL, "|"));
             lista_processosPR[i].tempo_execucao = atoi(strtok(NULL, "|"));
             lista_processosPR[i].prioridade = atoi(strtok(NULL, "|"));
+            lista_processosPR[i].memoryAmount = atoi(strtok(NULL, "|"));
+            lista_processosPR[i].capacity = ((lista_processosPR[i].memoryAmount / pageSize) * allocation / 100 );
             lista_processosPR[i].latencia = 0;
+            lista_processosPR[i].positionCounter = 0;
+            char *page_sequence_str = strtok(NULL, "|");
+
+            read_sequence(&lista_processosPR[i], page_sequence_str);
             i++;
         }
     }
     fclose(arquivo_2);
 
-    pthread_t executando_processo, lendo_novo_processo;
-    pthread_mutex_init(&mutex_prioridade, NULL);
+    // printf("ps %d\n", numero_processos);
+    for (int i = 0; i < numero_processos; i++) {
+        printf("Processo: %s\n", lista_processosPR[i].nome_processo);
+        printf("ID: %d\n", lista_processosPR[i].id);
+        printf("Clock: %d\n", lista_processosPR[i].tempo_execucao);
+        printf("Ticket: %d\n", lista_processosPR[i].prioridade);
+        printf("Memoria: %d\n", lista_processosPR[i].memoryAmount);
+         printf("Capacidade: %d\n", lista_processosPR[i].capacity);
+        
+        printf("Numeros: ");
+        for (int j = 0; j < lista_processosPR[i].pageAmount; j++) {
+            printf("%d ", lista_processosPR[i].pageSequence[j]);
+        }
+        printf("\n");
 
-    pthread_create(&lendo_novo_processo, NULL, &recebe_novos_processos, &numero_processos);
-    pthread_create(&executando_processo, NULL, &executando_processos, &clock);
+    }
 
-    pthread_join(executando_processo,NULL);
+    // pthread_t executando_processo, lendo_novo_processo;
+    // pthread_mutex_init(&mutex_prioridade, NULL);
 
-    pthread_cancel(lendo_novo_processo);
+    // pthread_create(&lendo_novo_processo, NULL, &recebe_novos_processos, &numero_processos);
+    // pthread_create(&executando_processo, NULL, &executando_processos, &clock);
 
-    pthread_mutex_destroy(&mutex_prioridade);
+    // pthread_join(executando_processo,NULL);
+
+    // pthread_cancel(lendo_novo_processo);
+
+    // pthread_mutex_destroy(&mutex_prioridade);
 
     criando_arquivo();
 
